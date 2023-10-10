@@ -1,6 +1,5 @@
 import { defineStore, mapActions } from "pinia";
-// const SERVER = "http://z-panel.io"
-const SERVER = "http://localhost"
+const SERVER = "http://z-panel.io"
 
 export const useStatStore= defineStore({
   id: "statStore",
