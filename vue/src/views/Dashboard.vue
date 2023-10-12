@@ -7,10 +7,12 @@ import jsVectorMap from 'jsvectormap';
 import 'jsvectormap/dist/maps/world.js';
 import 'jsvectormap/dist/css/jsvectormap.min.css';
 import { ref } from 'vue'
+import { useUserStore } from '@/stores/userStore';
 
 const appVariable = useAppVariableStore();
 const sessionStore = useSessionStore();
 const statStore = useStatStore();
+const userStore = useUserStore();
 
 export default {
 	components: {
@@ -183,6 +185,19 @@ export default {
 		stats: function(){
 			return statStore.stats
 		},
+		user: function(){
+			return userStore.user
+		},
+		balance:function(){
+			const userStore = useUserStore()
+			if(userStore.user && (userStore.user.balance !== null)){
+				let cents=parseFloat(userStore.user.balance)
+				let usd=(cents/100).toFixed(2);
+				let str=`${usd}\$`;
+				return str;
+			}
+			return "-"
+		},
 		selectedPanelName: function(){
 			return sessionStore.selectedPanelName
 		}
@@ -231,6 +246,56 @@ export default {
 	font-size: 1.15em;
 	margin-bottom: 0.5em;
 }
+
+.dashtable{
+	font-size:12.5px;
+    margin-bottom: 0rem;
+}
+
+
+.dashtable > :not(caption) > * > * {
+    padding: 0.25rem 0.15rem;
+}
+
+.online {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background-color: lightgreen;
+  white-space: nowrap; display: inline-block; vertical-align: middle;
+  margin-right:10px;
+  
+}
+
+.warning {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background-color: gold;
+  white-space: nowrap; display: inline-block; vertical-align: middle;
+  margin-right:10px;  
+}
+
+
+.offline {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background-color: rgb(191, 69, 69);
+  white-space: nowrap; display: inline-block; vertical-align: middle;
+  margin-right:10px;
+  
+}
+
+.warning {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background-color: rgb(218, 218, 0);
+  white-space: nowrap; display: inline-block; vertical-align: middle;
+  margin-right:10px;
+  
+}
 </style>
 <template>
 	<select class="panel-select" @change="onPanelSelect($event)" v-model="selectedPanelName" :value="selectedPanelName">
@@ -238,9 +303,79 @@ export default {
 			<option disabled v-if="!panels" value="no panels"></option>
 	</select>
 	<div class="row" v-if="renderComponent">
-		<!-- BEGIN stats -->
-		<div style="flex-grow: 1"></div>
-		<!-- END stats -->
+		<!-- START CARDS --> 
+		<div class="col-sm-4 mb-3">
+    <div class="card h-100">
+        <div class="card-body">
+            <p class="card-text">
+                Spendable balance:<small style="float: right"></small>
+            </p>
+            <h2 class="card-title">{{ balance }} </h2>
+            <br />
+            <div style="padding: 0px; margin: 0px">
+                <a
+                    href="#"
+                    style="float: right; bottom: 0; margin-left: 5px"
+                    class="btn btn-outline-theme"
+                    >Top up</a
+                >
+            </div>
+        </div>
+        <div class="card-arrow">
+            <div class="card-arrow-top-left"></div>
+            <div class="card-arrow-top-right"></div>
+            <div class="card-arrow-bottom-left"></div>
+            <div class="card-arrow-bottom-right"></div>
+        </div>
+    </div>
+</div>
+<div class="col-sm-8 mb-3">
+    <div class="card h-100">
+        <div class="card-body"><table class="table dashtable table-borderless">
+  <thead>
+    <tr>
+      <th scope="col">Status</th>	
+      <th scope="col">Host</th>
+      <th scope="col">PanelId</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th scope="row">
+		<div class="online"></div>
+	  </th>
+      <td>google.com</td>
+      <td>Hey</td>
+    </tr>
+    <tr>
+      <th scope="row"><div class="warning"></div></th>
+      <td>www.eitsmfe.be-19.info</td>
+      <td>hey</td>
+    </tr>
+    <tr>
+      <td scope="row"><div class="offline"></div></td>
+      <td>www.dienst.pw</td>
+	  <td >Hey</td>
+ </tr>
+
+  </tbody>
+</table>
+        </div>
+        <div class="card-arrow">
+            <div class="card-arrow-top-left"></div>
+            <div class="card-arrow-top-right"></div>
+            <div class="card-arrow-bottom-left"></div>
+            <div class="card-arrow-bottom-right"></div>
+        </div>
+    </div>
+</div>
+
+<!-- END CARDS -->
+<!-- BEGIN stats -->
+<div style="flex-grow: 1"></div>
+<!-- END stats -->
+
+		<!-- END-->
 		
 		<!-- BEGIN traffic-analytics -->
 		<div class="col-xl-6">
