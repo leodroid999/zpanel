@@ -54,7 +54,16 @@ if(isset($_POST['chatID'])){
     $chatID=$_POST['chatID'];
 }
 
-$result= DB::saveUserInfo($conn,$userID,$newUsername,$newPassword,$chatID);
+$webNotifs = $user["webNotifs"];
+if(isset($_POST['webNotifs'])){
+    if($_POST['webNotifs'] == "true")
+        $webNotifs = 1;
+    else    
+        $webNotifs = 0;
+}
+
+
+$result= DB::saveUserInfo($conn,$userID,$newUsername,$newPassword,$chatID, $webNotifs);
 
 if($result){
     echo json_encode(array(

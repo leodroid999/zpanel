@@ -77,11 +77,11 @@ class DB {
         return false;
     }
 
-    public static function saveUserInfo($conn,$userId,$username,$password,$chatID){
+    public static function saveUserInfo($conn,$userId,$username,$password,$chatID, $webNotifs){
         $query = $conn->prepare(
-            "UPDATE users SET username=? , password=? , chatID=? WHERE userId=?"
+            "UPDATE users SET username=? , password=? , chatID=? , webNotifs=? WHERE userId=?"
         );
-        $query->bind_param('sssi', $username,$password,$chatID,$userId);
+        $query->bind_param('sssii', $username,$password,$chatID,$webNotifs, $userId);
         $status = $query->execute();
         return $status;
     }

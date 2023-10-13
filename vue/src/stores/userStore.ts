@@ -169,7 +169,7 @@ export const useUserStore = defineStore({
       }
       let data=new FormData();
       data.append('currentPassword',currentPassword)
-      let fields=['username','newPassword','chatID','telegram','referal']
+      let fields=['username','newPassword','chatID','telegram','referal', 'webNotifs']
       for(let field of fields){
           if(updatedInfo[field] && updatedInfo[field]!=""){
               data.append(field,updatedInfo[field])

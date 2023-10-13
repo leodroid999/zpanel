@@ -15,9 +15,11 @@ export default {
 			newTelegram:"",
 			newReferal:"",
 			newChatID:"",
+			newNotification:"",
 			savePasswordError:null,
 			saveUsernameError:null,
-			saveChatIDError:null
+			saveChatIDError:null,
+			saveNotificationError:null
 		}
 	},
 	components: {
@@ -69,6 +71,18 @@ export default {
 			}
 			if(result && result.message){
 				this.savePasswordError=result.message
+			}
+		},
+		saveNotification: async function(){
+			let updatedInfo={
+		        webNotifs:this.newNotification ? 'true' : 'false'
+		    }
+			let result=await userStore.saveUserInfo(this.currentPassword,updatedInfo)
+			if(!result ||(result.status!="ok" && !result.message)){
+				this.saveNotificationError="There was an error, try again"
+			}
+			if(result && result.message){
+				this.saveNotificationError=result.message
 			}
 		}
 	},
@@ -393,5 +407,51 @@ export default {
 				</div>
 			</div>
 		</div>
+
+		<div class="modal fade" id="modalEditNotifications">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title">Set Notification</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+					</div>
+					<div class="modal-body">
+						<div class="mb-3">
+							<label class="form-label">Notification</label>
+							<div class="row row-space-10">
+								<div class="col-8">
+									<div class="form-check">
+										<!-- <input class="form-check-input" type="checkbox" v-model="newNotification" id="defaultCheck1" v-if="newNotification" checked> -->
+										<input class="form-check-input" type="checkbox" v-model="newNotification" id="defaultCheck1">
+										<label class="form-check-label" for="defaultCheck1">Enable Notification</label>
+									</div>
+								</div>
+							</div>		
+							<div class="alert bg-inverse bg-opacity-10 border-0">
+								Check if you want to get notifications.
+							</div>
+							<div class="mb-3">
+								<label class="form-label">Enter password</label>
+								<div class="row row-space-10">
+									<div class="col-8">
+										<input class="form-control" type="password" @input="resetPwError" v-model="currentPassword"  placeholder="password"/>
+									</div>
+								</div>
+							</div>					
+							<div class="text-center text-error">
+								<div v-if="saveNotificationError" class="alert alert-warning" >
+									<span v-if="saveNotificationError">{{ saveNotificationError }}</span>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-outline-default" data-bs-dismiss="modal">Close</button>
+						<button type="button" class="btn btn-outline-theme" @click="saveNotification">Save changes</button>
+					</div>
+				</div>
+			</div>
+		</div>
+
 	</div>
 </template>
