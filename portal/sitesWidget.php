@@ -53,7 +53,7 @@ else{
 
 
 function getSiteWidgetList($conn,$user){
-    $query = $conn->prepare("SELECT * FROM hosts INNER JOIN panels ON hosts.panelID = panels.panelID where userId=? ORDER BY lastCheck DESC LIMIT 4 ");
+    $query = $conn->prepare("SELECT * FROM hosts INNER JOIN panels ON hosts.panelID = panels.panelID where userId=? ORDER BY deploytime DESC LIMIT 4 ");
     $query->bind_param('i',$user['userId']);
     $query->execute();
     $queryresult=$query->get_result();

@@ -34,7 +34,7 @@ const router = createRouter({
     { path: '/logsdev', component: () => import('../views/Logs_.vue'), ...AUTH_REQUIRED  },
     { path: '/s/:id', component: () => import('../views/Session.vue'), ...AUTH_REQUIRED  },
     { path: '/analytics', component: () => import('../views/Analytics.vue') },
-    { path: '/shop/panels', component: () => import('../views/Shop-Panels.vue'), ...AUTH_REQUIRED  },
+    { path: '/shop/products', component: () => import('../views/Shop-Panels.vue'), ...AUTH_REQUIRED  },
     { path: '/scripts', component: () => import('../views/Admin-Scripts.vue'), ...ADMIN_REQUIRED  },
     { path: '/shortlinks', component: () => import('../views/Shortlink.vue'), ...SHORTLINK_PKG_REQUIRED  }
   ],

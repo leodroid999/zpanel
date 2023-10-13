@@ -4,7 +4,6 @@ $allowedOrigins = [
    'https://z-panel.io',
    'http://z-panel.io',
    'http://z-panel.io:5173',
-   'http://localhost:5173',
 ];
 
 if(isset($_SERVER['HTTP_ORIGIN'])){

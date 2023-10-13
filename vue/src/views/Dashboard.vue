@@ -262,6 +262,8 @@ export default {
 .dashtable {
 	font-size: 12.5px;
 	margin-bottom: 0rem;
+	border-bottom-style: hidden;
+
 }
 
 
@@ -316,6 +318,8 @@ export default {
 	margin-right: 10px;
 
 }
+
+
 </style>
 <template>
 	<select class="panel-select" @change="onPanelSelect($event)" v-model="selectedPanelName" :value="selectedPanelName">
@@ -349,12 +353,12 @@ export default {
 		<div class="col-sm-8 mb-3">
 			<div class="card h-100">
 				<div class="card-body">
-					<table class="table dashtable table-borderless" v-if="sitesWidget">
+					<table class="table dashtable table-striped" v-if="sitesWidget">
 						<thead>
 							<tr>
-								<th scope="col">Status</th>
-								<th scope="col">Host</th>
-								<th scope="col">PanelId</th>
+								<th scope="col">Status <i class="bi bi-hdd-stack-fill"></i></th>
+								<th scope="col">Host <i class="bi bi-globe"></i></th>
+								<th scope="col">PanelId <i class="bi bi-laptop"></i></th>
 							</tr>
 						</thead>
 						<tbody>
