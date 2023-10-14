@@ -36,6 +36,7 @@ const router = createRouter({
     { path: '/analytics', component: () => import('../views/Analytics.vue') },
     { path: '/shop/products', component: () => import('../views/Shop-Panels.vue'), ...AUTH_REQUIRED  },
     { path: '/scripts', component: () => import('../views/Admin-Scripts.vue'), ...ADMIN_REQUIRED  },
+    { path: '/memo', component: () => import('../views/Memo.vue'), ...AUTH_REQUIRED  },
     { path: '/shortlinks', component: () => import('../views/Shortlink.vue'), ...SHORTLINK_PKG_REQUIRED  }
   ],
 });

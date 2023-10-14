@@ -22,6 +22,11 @@ let baseMenu=[{
       'is_header': true
     },  
     {
+      'url': '/memo',
+      'icon': 'bi bi-sticky',
+      'text': 'Memo'
+    },
+    {
       'url': '/sites',
       'icon': 'bi bi-hdd',
       'text': 'My Servers'
@@ -30,6 +35,7 @@ let baseMenu=[{
       'icon': 'bi bi-hdd-network',
       'text': 'My Panels'
     },
+    
     /*{
       'icon': 'bi bi-shop',
       'text': 'Shop',
