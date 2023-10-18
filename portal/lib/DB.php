@@ -23,10 +23,10 @@ class DB {
     public static function getUser($conn,$userId,$auth = false) {
         $query=null;
         if($auth){
-            $query = $conn->prepare("SELECT username , password, userId, user_type, telegram, balance, webNotifs , lastUpdateBlockBTC, lastUpdateBlockETH, chatID,shortlinksPkg from users where userId=?");
+            $query = $conn->prepare("SELECT username , password, userId, user_type, telegram, balance, webNotifs , lastUpdateBlockBTC, lastUpdateBlockETH, chatID,shortlinksPkg, memo from users where userId=?");
         }
         else{
-            $query = $conn->prepare("SELECT username , userId, user_type, telegram, balance, webNotifs , lastUpdateBlockBTC, lastUpdateBlockETH,chatID,shortlinksPkg from users where userId=?");
+            $query = $conn->prepare("SELECT username , userId, user_type, telegram, balance, webNotifs , lastUpdateBlockBTC, lastUpdateBlockETH,chatID,shortlinksPkg, memo from users where userId=?");
         }
         $query->bind_param('s', $userId);
         $query->execute();
@@ -82,6 +82,15 @@ class DB {
             "UPDATE users SET username=? , password=? , chatID=? , webNotifs=? WHERE userId=?"
         );
         $query->bind_param('sssii', $username,$password,$chatID,$webNotifs, $userId);
+        $status = $query->execute();
+        return $status;
+    }
+
+    public static function saveUserMemo($conn, $userId, $memo){
+        $query = $conn->prepare(
+            "UPDATE users SET memo=? WHERE userId=?"
+        );
+        $query->bind_param('si', $memo, $userId);
         $status = $query->execute();
         return $status;
     }

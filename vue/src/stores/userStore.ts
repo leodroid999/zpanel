@@ -19,6 +19,7 @@ export const useUserStore = defineStore({
         newNotifications:null,
         enabledNotificationSound:false,
         notificationsSeen: new Set(),
+        memo: ""
     }
   },
   actions:{
@@ -137,6 +138,7 @@ export const useUserStore = defineStore({
           if(responseData.status=="ok"){
             this.authenticated=true;
             this.user=responseData.user;
+            this.memo=atob(responseData.user.memo);
           }
           return responseData;
         }
@@ -182,6 +184,40 @@ export const useUserStore = defineStore({
       }
       try{
         let response=await fetch(SERVER+'/portal/saveUserInfo.php',options);
+        if(response.ok){
+          let responseData=await response.json()
+          this.getUserInfo()
+          return responseData;
+        }
+        else{
+          return {
+            error:"SERVER_ERROR",
+            message:"There was a error processing your request , try again later"
+          }
+        }
+      }
+      catch(err){
+        console.error(err);
+        return {
+          error:"SERVER_ERROR",
+          message:"There was a error processing your request , try again later"
+        }
+      }
+    },
+
+
+    // Update user memo
+    async saveMemo(memo){
+      let data=new FormData();
+      data.append("memo", btoa(memo));
+
+      let options={
+        method:"POST",
+        body: data,
+        credentials: 'include'
+      }
+      try{
+        let response=await fetch(SERVER+'/portal/saveUserMemo.php',options);
         if(response.ok){
           let responseData=await response.json()
           this.getUserInfo()
