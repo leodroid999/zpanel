@@ -18,6 +18,12 @@ export const useSessionStore = defineStore({
     }
   },
   actions:{
+    async stopUpdates(){
+      for(let interval of this.updateIntervalIds){
+        clearInterval(interval)
+      }
+      this.updateIntervalIds.length=0;
+    },
     async getPanelList(getSessions,selectDefault = true){
       let options:any={
         credentials: 'include'
@@ -131,10 +137,12 @@ export const useSessionStore = defineStore({
           this.selectedSessions=[]
           this.pageResults=[]
       }
-      for(let interval of this.updateIntervalIds){
-        clearInterval(interval)
+      if(!isUpdate){
+        let sessionListUpdateInterval=setInterval(()=>{
+          this.getSessionList(panelId,nodeId,merge,true)
+        },1500);
+        this.updateIntervalIds.push(sessionListUpdateInterval);
       }
-      this.updateIntervalIds.length=0;
       let options:any={
         credentials: 'include'
       }
@@ -186,6 +194,7 @@ export const useSessionStore = defineStore({
             message:"There was a error loading your info , try again later"
           }
         }
+        
       }
       catch(err){
         console.error(err);
@@ -194,6 +203,7 @@ export const useSessionStore = defineStore({
           message:"There was a error processing your request , try again later"
         }
       }
+    
     },
     async refreshSession(sessionId,panelId,nodeId,interval){
       let intervalId=setTimeout(async ()=>{

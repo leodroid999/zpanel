@@ -1,6 +1,8 @@
 import { createRouter, createWebHistory } from "vue-router";
 
 import { useUserStore } from '@/stores/userStore';
+import { useSessionStore } from '@/stores/sessionStore';
+
 
 const AUTH_REQUIRED={
   meta:{
@@ -43,6 +45,8 @@ const router = createRouter({
 
 router.beforeEach(async(to, from, next) => {
   const userStore = useUserStore();
+  const sessionStore = useSessionStore();
+  sessionStore.stopUpdates()
   // auth check
   if (to.matched.some((route) => route.meta.requiresAuth)) {
     if (!userStore.authenticated) {

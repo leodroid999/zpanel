@@ -9,5 +9,6 @@ export default {
 </script>
 
 <template>
-  <vue-table-lite />
+  <vue-table-lite>
+  </vue-table-lite>
 </template>

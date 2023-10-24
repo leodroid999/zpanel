@@ -63,6 +63,7 @@ $nodeSQLUser =  $sql_user ? $sql_user : $node['NodeName'];
 $nodeSQLPass = $node['sql_key'];
 $panelDB = $panel['panelId'];
 // Connecting to the Node
+error_log(var_export($node,true));
 $NodeConn = new mysqli($nodeHost, $nodeSQLUser, $nodeSQLPass, $panelDB);
 
 if(!$NodeConn){

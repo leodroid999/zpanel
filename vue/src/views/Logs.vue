@@ -1,7 +1,7 @@
 <script>
 import { ref,defineComponent, reactive, computed, createApp, h} from 'vue';
 import highlightjs from '@/components/plugins/Highlightjs.vue';
-import vueTable from '@/components/plugins/VueTable.vue';
+import VueTableLite from 'vue3-table-lite'
 import navscrollto from '@/components/app/NavScrollTo.vue';
 import { useAppVariableStore } from '@/stores/app-variable';
 import { useSessionStore } from '@/stores/sessionStore';
@@ -49,6 +49,13 @@ export default {
 	        pageOptions:[{value:50,text:"50"}],
 			columns: [
 			{
+				label: "Session ID",
+				field: "SessionID",
+				width: "0%",
+				sortable: true,
+				isKey: true,
+			},
+			{
 				label: "Status",
 				field: "Last_Online",
 				width: "6%",
@@ -63,20 +70,13 @@ export default {
 			{
 				label: "Panel ID",
 				field: "panelId",
-				width: "6%",
+				width: "4%",
 				sortable: true,
 			},
 			{
-				label: "Session ID",
-				field: "SessionID",
-				width: "0%",
-				sortable: true,
-				isKey: true,
-				display: function (row) {
-					return (
-					'<a href="/s/'+row.SessionID+'"/><button @click="onSessionClick(row.SessionId)"type="button" class="w-100 btn btn-outline-theme btn-sm">'+row.SessionID+'</button></a>'
-					);
-				},
+				label: "Actions",
+				field:	"actions",
+				width: "3%",
 			},
 			{
 				label: "Page ID",
@@ -186,7 +186,7 @@ export default {
 					});
 				},
 			})
-			).mount(childTh[2]);
+			).mount(childTh[0]);
 			createApp(
 			defineComponent({
 				setup() {
@@ -201,7 +201,7 @@ export default {
 					});
 				},
 			})
-			).mount(childTh[3]);
+			).mount(childTh[4]);
 			createApp(
 			defineComponent({
 				setup() {
@@ -216,7 +216,7 @@ export default {
 					});
 				},
 			})
-			).mount(childTh[4]);
+			).mount(childTh[6]);
 
 			// append cloned element to the header after first <tr>
 			headerTr[0].after(cloneTr)
@@ -297,7 +297,7 @@ export default {
 	components: {
 		highlightjs: highlightjs,
 		navScrollTo: navscrollto,
-		vueTable: vueTable
+		VueTableLite: VueTableLite,
 	},
 	methods: {
 		loadPanelList: async function(){
@@ -305,13 +305,9 @@ export default {
 			this.onPanelSelect({target:{value:"ALL"}})
 		},
 		onPanelSelect:function(ev,isUpdate=false){
+			sessionStore.stopUpdates();
 			let selectedValue=ev.target.value;
 			let panelChange=false
-			if(this.updateLogTimeout && (selectedValue != sessionStore.selectedPanelName)){
-			    clearTimeout(this.updateLogTimeout)
-			    panelChange=true;
-			    this.currentTablePage=1;
-			}
 			sessionStore.selectedPanelName=selectedValue
 			if(selectedValue==""){
 				sessionStore.sessions=[]
@@ -330,9 +326,12 @@ export default {
     			let nodeId=valueParts[1];
 			    sessionStore.getSessionList(panelId,nodeId,true && !panelChange,isUpdate);
 		    }
-			this.updateLogTimeout=setTimeout(()=>{
-			    this.onPanelSelect(ev,true);
-			},2000)
+		},
+		bookmarkSession:function(session){
+			console.log(session)
+		},
+		deleteSession:function(session){
+			console.log(session)
 		}
 	},
 	computed:{
@@ -407,7 +406,7 @@ export default {
 			<br/>
 			<p v-if="!selectedPanelName">Select a panel to view session data</p>
 				<card-body>
-					<vue-table  v-if="sessions" class="vue-table"
+					<vue-table-lite v-if="sessions" class="vue-table"
 						:is-slot-mode="true"
 						:columns="table.columns"
 						:rows="table.rows"
@@ -417,8 +416,30 @@ export default {
 						:pageOptions="table.pageOptions"
 						:page="currentTablePage"
 						@do-search="doSearch">
-					    
-					</vue-table>
+					    <template v-slot:actions="data">
+							<div style="display: flex; justify-content: space-evenly;"> 
+								<button class="btn btn-outline-yellow btn-sm" 
+									style="width: 30px; height: 30px; margin-right:2px;"
+									@click="bookmarkSession(data.value)">
+									<i class="fas me-2 fa-star" v-if="!data.value.bookmark"></i>
+									<i class="fa-regular me-2 fa-star" v-if="data.value.bookmark"></i>
+								</button>
+								<button class="btn btn-outline-danger btn-sm" 
+									style="width: 30px; height: 30px; margin-right:2px;"
+									@click="deleteSession(data.value)">
+									<i class="fas me-2 fa-trash"></i>
+								</button>
+							</div>
+						</template>
+						<template v-slot:SessionID="data">
+							<router-link :to="'/s/'+data.value.SessionID">
+								<button type="button" class="w-100 btn btn-outline-theme btn-sm">
+									{{data.value.SessionID}}
+								</button>
+							</router-link>
+					
+						</template>
+					</vue-table-lite>
 				</card-body>
 				
 			
@@ -428,6 +449,16 @@ export default {
 	<p>
 	
 	</p>
+	<div class="footer">  <i class="bi bi-filter"></i> <div class="btn-group" role="group" aria-label="Basic radio toggle button group">
+  <input type="radio" class="btn-check" name="btnradio" id="btnradio1" autocomplete="off" checked>
+  <label class="btn btn-outline-theme" for="btnradio1">With inputs</label>
+
+  <input type="radio" class="btn-check" name="btnradio" id="btnradio2" autocomplete="off">
+  <label class="btn btn-outline-theme" for="btnradio2">Recent</label>
+
+  <input type="radio" class="btn-check" name="btnradio" id="btnradio3" autocomplete="off">
+  <label class="btn btn-outline-theme" for="btnradio3">Favorite</label>
+</div></div>
 </template>
 
 

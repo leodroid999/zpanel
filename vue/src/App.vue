@@ -74,7 +74,6 @@ document.querySelector('body').classList.add('app-init');
 		<div class="app-content" v-bind:class="appOption.appContentClass">
 			<router-view></router-view>
 		</div>
-<div class="footer"></div>
 		<app-footer v-if="appOption.appFooter" />
 	</div>
 </template>
