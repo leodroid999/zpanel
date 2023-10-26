@@ -43,11 +43,13 @@ if(!$user){
 
 $user=$user[0];
 
-$node = DB::getNodeById($conn,$nodeID);
+$node = DB::getNode($conn,$nodeID);
+
 if(!$node){
     ErrorHandler::serverError();
 }
 $node = $node[0];
+
 
 $panel = DB::getPanel($conn,$user,$panelID,$node['nodeId']);
 if(!$panel){
@@ -89,7 +91,7 @@ if(isset($_POST['mobile_only'])){
 }
 
 if(isset($_POST['Redirect_all'])){
-    $settings['Redirect_all']=$_POST['Redirect_all'] ? 1 : 0;
+    $settings['Redirect_all']=$_POST['Redirect_all'] == "true" ? 1 : 0;
 }
 
 

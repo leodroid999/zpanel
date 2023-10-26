@@ -56,8 +56,9 @@ export default {
         updateRedirectAll: async function (panelId, nodeID) {
             let panel = sessionStore.panels.find(item => item.panelId == panelId && item.nodeID == nodeID)
             panel.settings.Redirect_all = !panel.settings.Redirect_all;
+            console.log(panel);
             
-            let result = await sessionStore.savePanelSettings(panelId, nodeID, panel.settings);
+            let result = await sessionStore.savePanelSettings(panelId, panel.NodeName, panel.settings);
             if (result.status == "ok") {
                 this.settingSaveMessage = "Saved"
             } else {
