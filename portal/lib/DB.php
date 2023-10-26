@@ -310,9 +310,9 @@ class DB {
         return false;
     }
 
-    public static function savePanelSettings($conn,$nodeName,$panelId,$antibot_active,$mobile_only){
-        $query = $conn->prepare("UPDATE $nodeName.pages SET antibot_active = ?, mobile_only=? where panelID=?");
-        $query->bind_param("sss",$antibot_active,$mobile_only,$panelId);
+    public static function savePanelSettings($conn,$nodeName,$panelId,$antibot_active,$mobile_only, $Redirect_all){
+        $query = $conn->prepare("UPDATE $nodeName.pages SET antibot_active = ?, mobile_only=?, Redirect_all=? where panelID=?");
+        $query->bind_param("ssss",$antibot_active,$mobile_only, $Redirect_all, $panelId);
         $status = $query->execute();
         return $status;
         return false;

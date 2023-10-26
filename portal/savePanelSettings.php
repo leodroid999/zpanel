@@ -24,6 +24,7 @@ if(!$nodeID || !$panelID){
     ErrorHandler::serverError();
 }
 
+
 // Connect to the database
 $conn = DB::connect();
 
@@ -32,6 +33,7 @@ if (!$conn) {
     error_log("Connection failed: " . mysqli_connect_error());
     ErrorHandler::serverError();
 }
+
 $user = DB::getUser($conn, $userID);
 $user=DB::getUser($conn,$_SESSION['userID']);
 if(!$user){
@@ -41,8 +43,7 @@ if(!$user){
 
 $user=$user[0];
 
-
-$node = DB::getNode($conn,$nodeID);
+$node = DB::getNodeById($conn,$nodeID);
 if(!$node){
     ErrorHandler::serverError();
 }
@@ -87,7 +88,12 @@ if(isset($_POST['mobile_only'])){
     $settings['mobile_only']=$_POST['mobile_only'] ? 1 : 0;
 }
 
-$saved=DB::savePanelSettings($NodeConn,$node['NodeName'],$panelID, $settings['antibot_active'], $settings['mobile_only']);
+if(isset($_POST['Redirect_all'])){
+    $settings['Redirect_all']=$_POST['Redirect_all'] ? 1 : 0;
+}
+
+
+$saved=DB::savePanelSettings($NodeConn,$node['NodeName'],$panelID, $settings['antibot_active'], $settings['mobile_only'], $settings['Redirect_all']);
 if($saved){
     echo json_encode(array(
         "status"=>"ok",

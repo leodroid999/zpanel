@@ -323,7 +323,7 @@ export const useSessionStore = defineStore({
     },
     async savePanelSettings(panelId,nodeId,settings){
       let data=new FormData();
-      let fields=['antibot_active','mobile_only']
+      let fields=['antibot_active','mobile_only', 'Redirect_all']
       data.append('panelId',panelId);
       data.append('nodeId',nodeId);
       for(let field of fields){
