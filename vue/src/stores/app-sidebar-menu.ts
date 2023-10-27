@@ -36,21 +36,18 @@ let baseMenu=[{
       'text': 'My Panels'
     },
     
-    /*{
+   {
       'icon': 'bi bi-shop',
       'text': 'Shop',
       'highlight': false,
       'children': [{
-				'url': '/shop/panels',
-				'text': 'Panels'
+				'url': '/shop/',
+				'text': 'Marketplace'
 			}, {
 				'url': '/pos/counter-checkout',
 				'text': 'Leads'
-			}, {
-				'url': '/pos/counter-checkout',
-				'text': 'Accounts'
-			}]
-    },*/ {
+		}]
+    }, {
       'is_divider': true
     }, {
       'text': 'Users',

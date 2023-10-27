@@ -291,7 +291,8 @@ export default {
 			initTable,
 			selectedPanel:"ALL",
 			updateLogTimeout:null,
-			currentTablePage:1
+			currentTablePage:1,
+			selectedFilter:null
 		}
 	},
 	components: {
@@ -308,12 +309,17 @@ export default {
 			sessionStore.stopUpdates();
 			let selectedValue=ev.target.value;
 			let panelChange=false
+			if(this.selectedPanel!=selectedValue){
+				panelChange=true;
+			}
+			this.selectedPanel=selectedValue;
 			sessionStore.selectedPanelName=selectedValue
 			if(selectedValue==""){
 				sessionStore.sessions=[]
 				return
 			}
 			if(selectedValue=="ALL"){
+				sessionStore.selectedPanel=null;
 			    for(let i=0;i<sessionStore.panels.length;i++){
 			        let panel = sessionStore.panels[i]
 			        let mergeNext = (i != 0 || !panelChange) ? true : false
@@ -324,14 +330,24 @@ export default {
     			let valueParts=selectedValue.split("@");
     			let panelId=valueParts[0];
     			let nodeId=valueParts[1];
-			    sessionStore.getSessionList(panelId,nodeId,true && !panelChange,isUpdate);
+				sessionStore.selectedPanel={
+					panelId,
+					nodeId,
+				}
+			    sessionStore.getSessionList(panelId,nodeId,false,isUpdate);
 		    }
 		},
-		bookmarkSession:function(session){
+		bookmarkSession:function(session,bookmarked){
 			console.log(session)
 		},
 		deleteSession:function(session){
 			console.log(session)
+		},
+		setFilter:function(filtername){
+			if(filtername!=this.selectedFilter){
+				this.selectedFilter=filtername
+				sessionStore.setFilter(filtername)
+			}
 		}
 	},
 	computed:{
@@ -390,7 +406,7 @@ export default {
 	<h1 class="page-header">
 	</h1>
 		<!-- BEGIN #vue3TableLite -->
-		<select class="log-select" @change="onPanelSelect($event)" v-model="selectedPanelName" :value="selectedPanelName">
+		<select class="log-select" @change="onPanelSelect($event)" v-model="selectedPanel" :value="selectedPanelName">
 			<option v-if="panels" v-for="panel in panels" :value="panel.panelId+'@'+panel.nodeID">{{panel.panelId}} @ {{panel.nodeID }}</option>
 			<option value="ALL">Show All</option>
 			<option disabled v-if="!panels" value="no panels"></option>
@@ -449,16 +465,22 @@ export default {
 	<p>
 	
 	</p>
-	<div class="footer">  <i class="bi bi-filter"></i> <div class="btn-group" role="group" aria-label="Basic radio toggle button group">
-  <input type="radio" class="btn-check" name="btnradio" id="btnradio1" autocomplete="off" checked>
-  <label class="btn btn-outline-theme" for="btnradio1">With inputs</label>
+	<div class="footer" style="z-index:1500 !important">  
+		<div class="btn-group" role="group" aria-label="Basic radio toggle button group">
+			<input type="radio" class="btn-check" name="filter" id="filter1" autocomplete="off" checked>
+			<label class="btn btn-outline-theme" for="filter1" @click="setFilter(null)">No filter</label>
 
-  <input type="radio" class="btn-check" name="btnradio" id="btnradio2" autocomplete="off">
-  <label class="btn btn-outline-theme" for="btnradio2">Recent</label>
+			<input type="radio" class="btn-check" name="filter" id="filter2" autocomplete="off">
+			<label class="btn btn-outline-theme" for="filter2" @click="setFilter('ínputs')">With inputs</label>
 
-  <input type="radio" class="btn-check" name="btnradio" id="btnradio3" autocomplete="off">
-  <label class="btn btn-outline-theme" for="btnradio3">Favorite</label>
-</div></div>
+			<input type="radio" class="btn-check" name="filter" id="filterx3" autocomplete="off">
+			<label class="btn btn-outline-theme" for="filterx3" @click="setFilter('recent')">Recent</label>
+
+			<input type="radio" class="btn-check" name="filter" id="filter4" autocomplete="off">
+			<label class="btn btn-outline-theme" for="filter4" @click="setFilter('bookmarked')">Favorites</label>
+
+		</div>
+	</div>
 </template>
 
 
