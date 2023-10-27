@@ -557,6 +557,18 @@ class DB {
         return false;
     }
 
+    public static function getProductTags($conn,$productID){
+        $query = $conn->prepare("SELECT * FROM productTags WHERE productID=?");
+        $query->bind_param("s",$productID);
+        $query->execute();
+        $queryresult=$query->get_result();
+        if($queryresult){
+            $result=$queryresult->fetch_all(MYSQLI_ASSOC);
+            return $result;
+        }
+        return false;
+    }
+
     public static function getPanelAccessList($conn,$panelId){
         $query = $conn->prepare(
             "SELECT panelId, users.userId, users.chatID ,users.username ,access ". 

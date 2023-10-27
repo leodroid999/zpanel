@@ -60,10 +60,14 @@ export default {
             if(result.error){
                 this.buyErrorMessage=result.message;
             }
+        },
+        renderTagColor(tagColor){
+            return "bg-" + tagColor;
         }
     },
     computed:{
         products(){
+            console.log(shopStore.products);
             return shopStore.products
         },
         totalPrice(){
@@ -133,7 +137,8 @@ export default {
                             <i class="float-right fas fa-shopping-cart" @click="openBuyProductModal(product)"></i>
                         </a>
                     </div>
-                    <h4>{{product.price}}$</h4> <span class="badge bg-dark">Bank</span> <span class="badge bg-light">Live</span> 
+                    <h4>{{product.price}}$</h4> 
+                    <span class="badge" v-if="product.tags" v-for="tag in product.tags" :class="renderTagColor(tag.tagColor)">{{ tag.tagLabel }}</span> 
                 </div>
             </div>
         </div>

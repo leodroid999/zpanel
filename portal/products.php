@@ -44,6 +44,11 @@ if(count($products)==0){
     ));
 }
 else{
+
+    for($i = 0; $i < sizeof($products); $i++){
+        $tags = DB::getProductTags($conn, $products[$i]["productID"]);
+        $products[$i]["tags"] = $tags;
+    }
     echo json_encode(array(
         "status"=>"ok",
         "products"=>$products,
