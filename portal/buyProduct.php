@@ -85,8 +85,8 @@ if(!$product){
 }
 $product=$product[0];
 $price = $product['price'];
-$isDownload = $product['isDownload'];
-if(!$isDownload){
+//$isDownload = $product['isDownload'];
+// if(!$isDownload){
     if(!isset($days) || !isset($startTime)){
         ErrorHandler::serverError();
     }
@@ -106,19 +106,31 @@ if(!$isDownload){
         );
         exit();
     }
-    $dateNow = new DateTimeImmutable('now',new DateTimeZone('UTC'));
-    $tsNow = $dateNow->getTimestamp();
-    $startTime = intval($startTime);
-    if(!$startTime){
-        ErrorHandler::serverError();
-    }
-    $startTime=intdiv($startTime,1000);
-    if($tsNow>$startTime){
-        $startTime=$tsNow;
-    }
-    $date=new DateTimeImmutable('now',new DateTimeZone('UTC'));
-    $startDate = $date->setTimestamp($startTime);
-    $endDate = $startDate->add(new DateInterval("P".$days."D"));
-    $name=$array_rand($names);
-}
+
+    DB::updateUserBalance($conn, $userID, $balance - $totalPriceCents);
+    DB::updateProductState($conn, $productID, "SOLD");
+    DB::insertOrder($conn, $userID, $product['productType'], $productID);
+
+    echo json_encode(array(
+        "status"=>"ok",
+        "message"=>"Saved sucessfully.",
+        "title"=>$product['title'],
+        "price"=>$dayAmount*$price
+    ));
+
+    // $dateNow = new DateTimeImmutable('now',new DateTimeZone('UTC'));
+    // $tsNow = $dateNow->getTimestamp();
+    // $startTime = intval($startTime);
+    // if(!$startTime){
+    //     ErrorHandler::serverError();
+    // }
+    // $startTime=intdiv($startTime,1000);
+    // if($tsNow>$startTime){
+    //     $startTime=$tsNow;
+    // }
+    // $date=new DateTimeImmutable('now',new DateTimeZone('UTC'));
+    // $startDate = $date->setTimestamp($startTime);
+    // $endDate = $startDate->add(new DateInterval("P".$days."D"));
+    // $name=$array_rand($names);
+//}
 ?>

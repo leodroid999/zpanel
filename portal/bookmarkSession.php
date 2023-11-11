@@ -1,4 +1,5 @@
 <?php
+
 include "cors.php";
 require "lib/ErrorHandler.php";
 require_once 'lib/DB.php';
@@ -7,23 +8,26 @@ use Library\DB as DB;
 
 session_start();
 
-$userpassword = $_SESSION['userSessionPass'];
 $userID = $_SESSION['userID'];
-$nodeID = $_GET['nodeId'];
-$panelID = $_GET['panelId'];
-$filter = null;
+$sessionID = $_POST['sessionId'];
+$nodeID = $_POST['nodeId'];
+$panelID = $_POST['panelId'];
 
-if(!$userID || !$userpassword){
+$bookmarked = false;
+
+if(!$userID){
     ErrorHandler::authError();
 }
-
-if(!$nodeID || !$panelID){
+if(isset($_POST['bookmarked'])){
+  if($_POST['bookmarked']=="true"){
+    $bookmarked=true;
+  }  
+}
+else{
+    error_log("bookmark parameter missing");
     ErrorHandler::serverError();
 }
-
-if(isset($_GET['filter'])){
-    $filter=$_GET['filter'];
-}
+error_log($bookmarked);
 
 // Connect to the database
 $conn = DB::connect();
@@ -42,6 +46,7 @@ if(!$user){
 }
 
 $user=$user[0];
+
 $panel = DB::getPanel($conn,$user,$panelID,$nodeID);
 if($panel==null){
     $panel = DB::getPanelAddedToById($conn,$user,$panelID);
@@ -55,12 +60,11 @@ if($panel){
         $panel["nodeId"] = $panel["nodeID"];
     }
 }
-
 $node = DB::getNodeById($conn,$panel["nodeId"]);
 if(!$node){
     ErrorHandler::serverError();
 }
-$node = $node[0];
+$node = $node[0];;
 $nodeHost = $node['nodeId'];
 $sql_user = $node['sql_user'];
 $nodeSQLUser =  $sql_user ? $sql_user : $node['NodeName'];
@@ -72,22 +76,14 @@ if(!$NodeConn){
     ErrorHandler::serverError();
 }
 
-$sessions = DB::getSessions($NodeConn,$filter);
-
-if(!$sessions===null){
-    error_log("Error loading session list: " . mysqli_error($NodeConn));
-    ErrorHandler::serverError();
-}
-if(count($sessions)==0){
+$updated=DB::bookmarkSession($NodeConn,$sessionID,$bookmarked);
+if($updated){
     echo json_encode(array(
         "status"=>"ok",
-        "sessions"=>[],
     ));
 }
 else{
-    echo json_encode(array(
-        "status"=>"ok",
-        "sessions"=>$sessions,
-    ));
+    error_log("Error saving bookmark : " . mysqli_error($NodeConn));
+    ErrorHandler::serverError();
 }
 ?>

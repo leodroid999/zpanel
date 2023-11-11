@@ -15,6 +15,7 @@ export const useSessionStore = defineStore({
       currentSession:null,
       scriptOutput:"",
       updateIntervalIds:[],
+      currentFilter:null
     }
   },
   actions:{
@@ -23,6 +24,22 @@ export const useSessionStore = defineStore({
         clearInterval(interval)
       }
       this.updateIntervalIds.length=0;
+    },
+    async clearSessions(){
+      this.sessions=[],
+      this.selectedSessions={}
+      this.pageResults=[]
+    },
+    async setFilter(filter){
+      this.currentFilter=filter
+      this.stopUpdates();
+      this.clearSessions()
+      if(this.selectedPanelName=="ALL"){
+        this.getAllPanelSessions(false,filter)
+      }
+      else{
+        this.getSessionList(this.selectedPanel.panelId,this.selectedPanel.nodeId,false,false,filter)
+      }
     },
     async getPanelList(getSessions,selectDefault = true){
       let options:any={
@@ -131,7 +148,15 @@ export const useSessionStore = defineStore({
         }
       }
     },
-    async getSessionList(panelId,nodeId,merge,isUpdate){
+    async getAllPanelSessions(panelChange,filter){
+      this.selectedPanel=null;
+      for(let i=0;i<this.panels.length;i++){
+        let panel = this.panels[i]
+        let mergeNext = (i != 0 || !panelChange) ? true : false
+        this.getSessionList(panel.panelId,panel.nodeID,mergeNext,false,filter)
+      }
+    },
+    async getSessionList(panelId,nodeId,merge,isUpdate,filter){
       if(!merge){
           this.sessions=[]
           this.selectedSessions=[]
@@ -139,15 +164,19 @@ export const useSessionStore = defineStore({
       }
       if(!isUpdate){
         let sessionListUpdateInterval=setInterval(()=>{
-          this.getSessionList(panelId,nodeId,merge,true)
-        },1500);
+          this.getSessionList(panelId,nodeId,true,true,filter)
+        },5000);
         this.updateIntervalIds.push(sessionListUpdateInterval);
       }
       let options:any={
         credentials: 'include'
       }
       try{
-        let response=await fetch(SERVER+`/portal/sessions.php?panelId=${panelId}&nodeId=${nodeId}`,options);
+        let url=`${SERVER}/portal/sessions.php?panelId=${panelId}&nodeId=${nodeId}`;
+        if(filter){
+          url+=`&filter=${filter}`;
+        }
+        let response=await fetch(url,options);
         if(response.ok){
           let responseData=await response.json()
           if(responseData.status=="ok"){
@@ -364,6 +393,7 @@ export const useSessionStore = defineStore({
         }
       }
     },
+
     async sendData(newData,newRedirect,sendError){
       let data=new FormData();
       data.append('sessionId',this.currentSession.SessionID);
@@ -383,6 +413,91 @@ export const useSessionStore = defineStore({
       }
       try{
         let response=await fetch(SERVER+'/portal/sendData.php',options);
+        if(response.ok){
+          let responseData=await response.json()
+          return responseData;
+        }
+        else{
+          if(response.status==401){
+            this.authenticated=false;
+            return {
+              error:"NOT_AUTHENTICATED",
+              message:"Your session expired, login again"
+            }
+          }
+          return {
+            error:"SERVER_ERROR",
+            message:"There was a error loading your info , try again later"
+          }
+        }
+      }
+      catch(err){
+        console.error(err);
+        return {
+          error:"SERVER_ERROR",
+          message:"There was a error processing your request , try again later"
+        }
+      }
+    },
+    async bookmarkSession(session,bookmarked){
+      let data=new FormData();
+      data.append('panelId',session.panelId);
+      let node=this.panels.find(panel => session.panelId == panel.panelId)
+      if(!node){
+        return false;
+      }
+      data.append('nodeId',node.nodeID);
+      data.append('sessionId',session.SessionID);
+      data.append('bookmarked',bookmarked);
+      let options:any={
+        credentials: 'include',
+        method:"POST",
+        body: data
+      }
+      try{
+        let response=await fetch(SERVER+'/portal/bookmarkSession.php',options);
+        if(response.ok){
+          let responseData=await response.json()
+          return responseData;
+        }
+        else{
+          if(response.status==401){
+            this.authenticated=false;
+            return {
+              error:"NOT_AUTHENTICATED",
+              message:"Your session expired, login again"
+            }
+          }
+          return {
+            error:"SERVER_ERROR",
+            message:"There was a error loading your info , try again later"
+          }
+        }
+      }
+      catch(err){
+        console.error(err);
+        return {
+          error:"SERVER_ERROR",
+          message:"There was a error processing your request , try again later"
+        }
+      }
+    },
+    async deleteSession(session){
+      let data=new FormData();
+      data.append('panelId',session.panelId);
+      let node=this.panels.find(panel => session.panelId == panel.panelId)
+      if(!node){
+        return false;
+      }
+      data.append('nodeId',node.nodeID);
+      data.append('sessionId',session.SessionID);
+      let options:any={
+        credentials: 'include',
+        method:"POST",
+        body: data
+      }
+      try{
+        let response=await fetch(SERVER+'/portal/deleteSession.php',options);
         if(response.ok){
           let responseData=await response.json()
           return responseData;

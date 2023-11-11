@@ -28,6 +28,7 @@ const router = createRouter({
     { path: '/logs', component: () => import('../views/Logs.vue') , ...AUTH_REQUIRED },
     { path: '/settings', component: () => import('../views/Settings.vue') , ...AUTH_REQUIRED },
     { path: '/wallet', component: () => import('../views/Wallet.vue'), ...AUTH_REQUIRED },
+    { path: '/order', component: () => import('../views/Order.vue'), ...AUTH_REQUIRED },
     { path: '/register', component: () => import('../views/PageRegister.vue')},
     { path: '/dashboard', component: () => import('../views/Dashboard.vue'), alias: "/", ...AUTH_REQUIRED },
     { path: '/panels', component: () => import('../views/Panels.vue'), ...AUTH_REQUIRED },
@@ -38,6 +39,7 @@ const router = createRouter({
     { path: '/analytics', component: () => import('../views/Analytics.vue') },
     { path: '/shop/', component: () => import('../views/Shop-Market.vue'), ...AUTH_REQUIRED  },
     { path: '/scripts', component: () => import('../views/Admin-Scripts.vue'), ...ADMIN_REQUIRED  },
+    { path: '/editor', component: () => import('../views/Page-Editor.vue'), ...ADMIN_REQUIRED  },
     { path: '/memo', component: () => import('../views/Memo.vue'), ...AUTH_REQUIRED  },
     { path: '/shortlinks', component: () => import('../views/Shortlink.vue'), ...SHORTLINK_PKG_REQUIRED  }
   ],

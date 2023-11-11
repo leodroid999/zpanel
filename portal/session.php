@@ -52,25 +52,28 @@ if(!$user){
 $user=$user[0];
 
 $panel = DB::getPanel($conn,$user,$panelID,$nodeID);
-if(!$panel){
+if($panel==null){
+    $panel = DB::getPanelAddedToById($conn,$user,$panelID);
+}
+if($panel==null){
     ErrorHandler::serverError();
 }
 if($panel){
     $panel=$panel[0];
+    if(isset($panel['nodeID'])){
+        $panel["nodeId"] = $panel["nodeID"];
+    }
 }
-
 $node = DB::getNodeById($conn,$panel["nodeId"]);
 if(!$node){
     ErrorHandler::serverError();
 }
-$node = $node[0];
-
-$nodeHost = $panel['nodeId'];
-$sql_user = $panel['sql_user'];
+$node = $node[0];;
+$nodeHost = $node['nodeId'];
+$sql_user = $node['sql_user'];
 $nodeSQLUser =  $sql_user ? $sql_user : $node['NodeName'];
-$nodeSQLPass = $panel['sql_key'];
+$nodeSQLPass = $node['sql_key'];
 $panelDB = $panel['panelId'];
-// Connecting to the Node
 $NodeConn = new mysqli($nodeHost, $nodeSQLUser, $nodeSQLPass, $panelDB);
 
 if(!$NodeConn){

@@ -56,6 +56,10 @@ let baseMenu=[{
       'url': '/wallet', 
       'icon': 'bi bi-wallet',
       'text': 'Wallet'
+    },{
+      'url': '/order', 
+      'icon': 'fas fa-shopping-cart',
+      'text': 'Order'
     },
       /* {
       'url': '/info', 
@@ -77,8 +81,14 @@ const adminOptions=[
     'url': '/scripts',
     'icon': 'bi bi-tools',
     'text': 'Admin'
+  },
+  {
+    'url': '/editor',
+    'icon': 'bi bi-hammer',
+    'text': 'Editor'
   }
 ]
+
 const shortlinkOptions=[
   {
     'url': '/shortlinks',

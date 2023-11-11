@@ -11,10 +11,13 @@ const appVariable = useAppVariableStore();
 const sessionStore = useSessionStore();
 
 let SessionIDSearch= ref("");
-let pageIDSearch= ref("");
+let panelIDPageSearch= ref("");
 let InputSearch= ref("");
 let filter = reactive({enabled:false,count:0});
 let onlineStatus=function(str){
+	if(!str){
+		return "??"
+	}
 	try{
 		let ts=parseInt(str);
 		let d=new Date(ts*1000);
@@ -42,7 +45,7 @@ export default {
 	data () {
 		let searchFields={
 			SessionIDSearch,
-			pageIDSearch,
+			panelIDPageSearch,
 			InputSearch,
 		}
 		const table = reactive({
@@ -68,21 +71,18 @@ export default {
 				},
 			},
 			{
-				label: "Panel ID",
-				field: "panelId",
+				label: "Panel - Page",
+				field: "panelIDPage",
 				width: "4%",
 				sortable: true,
+				display: function(row){
+					return row.panelId+" - "+row.pageID
+				}
 			},
 			{
 				label: "Actions",
 				field:	"actions",
 				width: "3%",
-			},
-			{
-				label: "Page ID",
-				field: "pageID",
-				width: "5%",
-				sortable: true,
 			},
 			{
 				label: "Info",
@@ -193,15 +193,15 @@ export default {
 				return () =>
 					h("input", {
 					class: "searchBar",
-					value: searchFields.pageIDSearch.value,
+					value: searchFields.panelIDPageSearch.value,
 					onInput: (e) => {
-						searchFields.pageIDSearch.value = e.target.value;
+						searchFields.panelIDPageSearch.value = e.target.value;
 						filterResults()
 					},
 					});
 				},
 			})
-			).mount(childTh[4]);
+			).mount(childTh[2]);
 			createApp(
 			defineComponent({
 				setup() {
@@ -216,7 +216,7 @@ export default {
 					});
 				},
 			})
-			).mount(childTh[6]);
+			).mount(childTh[5]);
 
 			// append cloned element to the header after first <tr>
 			headerTr[0].after(cloneTr)
@@ -319,12 +319,7 @@ export default {
 				return
 			}
 			if(selectedValue=="ALL"){
-				sessionStore.selectedPanel=null;
-			    for(let i=0;i<sessionStore.panels.length;i++){
-			        let panel = sessionStore.panels[i]
-			        let mergeNext = (i != 0 || !panelChange) ? true : false
-			        sessionStore.getSessionList(panel.panelId,panel.nodeID,mergeNext,isUpdate)
-			    }
+				sessionStore.getAllPanelSessions(panelChange,sessionStore.currentFilter)
 			}
 			else{
     			let valueParts=selectedValue.split("@");
@@ -334,14 +329,21 @@ export default {
 					panelId,
 					nodeId,
 				}
-			    sessionStore.getSessionList(panelId,nodeId,false,isUpdate);
+			    sessionStore.getSessionList(panelId,nodeId,false,isUpdate,sessionStore.currentFilter);
 		    }
 		},
-		bookmarkSession:function(session,bookmarked){
-			console.log(session)
+		bookmarkSession:async function(session){
+			let bookmarked = !session.bookmark || session.bookmark == "0" ? true : false;
+			let result=await sessionStore.bookmarkSession(session,bookmarked)
+			if(result.status=="ok"){
+				session.bookmark = bookmarked ? "1" : "0"
+			}
 		},
-		deleteSession:function(session){
-			console.log(session)
+		deleteSession:async function(session){
+			let result=await sessionStore.deleteSession(session)
+			if(result.status=="ok"){
+				this.setFilter(this.currentFilter)
+			}
 		},
 		setFilter:function(filtername){
 			if(filtername!=this.selectedFilter){
@@ -362,6 +364,7 @@ export default {
 		}
 	},
 	mounted() {
+		sessionStore.currentFilter=null;
 		sessionStore.selectedPanelName="ALL"
 		this.loadPanelList()
 		new ScrollSpy(document.body, {
@@ -437,8 +440,8 @@ export default {
 								<button class="btn btn-outline-yellow btn-sm" 
 									style="width: 30px; height: 30px; margin-right:2px;"
 									@click="bookmarkSession(data.value)">
-									<i class="fas me-2 fa-star" v-if="!data.value.bookmark"></i>
-									<i class="fa-regular me-2 fa-star" v-if="data.value.bookmark"></i>
+									<i class="fas me-2 fa-star" v-if="!data.value.bookmark || data.value.bookmark=='0'"></i>
+									<i class="fa-regular me-2 fa-star" v-if="data.value.bookmark=='1'"></i>
 								</button>
 								<button class="btn btn-outline-danger btn-sm" 
 									style="width: 30px; height: 30px; margin-right:2px;"
@@ -448,12 +451,21 @@ export default {
 							</div>
 						</template>
 						<template v-slot:SessionID="data">
+							<div style="align-items:center; display: flex; justify-content:center">
+								<i class="fas me-2 fa-star text-yellow" style="padding-right:0 !important" v-if="data.value.bookmark=='1'"></i>
+								<router-link :to="'/s/'+data.value.SessionID" style="flex-grow: 1">
+									<button type="button" class="w-100 btn btn-outline-theme btn-sm">
+										{{data.value.SessionID}}
+									</button>
+								</router-link>
+							</div>
+						</template>
+						<template v-slot:pageID="data">
 							<router-link :to="'/s/'+data.value.SessionID">
 								<button type="button" class="w-100 btn btn-outline-theme btn-sm">
 									{{data.value.SessionID}}
 								</button>
 							</router-link>
-					
 						</template>
 					</vue-table-lite>
 				</card-body>
@@ -465,13 +477,13 @@ export default {
 	<p>
 	
 	</p>
-	<div class="footer" style="z-index:1500 !important">  
+	<div class="footer" style="z-index:1500 !important; display:flex !important; justify-content:center !important">  
 		<div class="btn-group" role="group" aria-label="Basic radio toggle button group">
 			<input type="radio" class="btn-check" name="filter" id="filter1" autocomplete="off" checked>
 			<label class="btn btn-outline-theme" for="filter1" @click="setFilter(null)">No filter</label>
 
 			<input type="radio" class="btn-check" name="filter" id="filter2" autocomplete="off">
-			<label class="btn btn-outline-theme" for="filter2" @click="setFilter('ínputs')">With inputs</label>
+			<label class="btn btn-outline-theme" for="filter2" @click="setFilter('inputs')">With inputs</label>
 
 			<input type="radio" class="btn-check" name="filter" id="filterx3" autocomplete="off">
 			<label class="btn btn-outline-theme" for="filterx3" @click="setFilter('recent')">Recent</label>
