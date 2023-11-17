@@ -80,13 +80,11 @@ if(!$NodeConn){
     ErrorHandler::serverError();
 }
 $getPageTable = DB::checkPageTableExists($NodeConn,$node['NodeName']);
-
 $session = DB::getSession($NodeConn,$node['NodeName'],$sessionID,$getPageTable);
 if(!isset($session)){
     error_log("Error loading session list: " . mysqli_error($NodeConn));
     ErrorHandler::serverError();
 }
-
 if(count($session)==0){
     echo json_encode(array(
         "status"=>"ok",

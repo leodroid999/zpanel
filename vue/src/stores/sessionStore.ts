@@ -158,9 +158,9 @@ export const useSessionStore = defineStore({
     },
     async getSessionList(panelId,nodeId,merge,isUpdate,filter){
       if(!merge){
-          this.sessions=[]
-          this.selectedSessions=[]
-          this.pageResults=[]
+        this.sessions=[]
+        this.selectedSessions=[]
+        this.pageResults=[]
       }
       if(!isUpdate){
         let sessionListUpdateInterval=setInterval(()=>{
@@ -181,31 +181,46 @@ export const useSessionStore = defineStore({
           let responseData=await response.json()
           if(responseData.status=="ok"){
             let combinedSessions = []
+            let newSessionsDetected  = false
             if(!merge){
-                combinedSessions = responseData.sessions;
-                combinedSessions = combinedSessions.map(item =>{
-                  item.panelId = panelId;
-                  return item
-                });
+              combinedSessions = responseData.sessions;
+              combinedSessions = combinedSessions.map(item =>{
+                item.panelId = panelId;
+                return item
+              });
             }
             else{
-                let existingSessionIds = this.sessions.map(item => {
-                    return item.SessionID
-                })
-                let newSessions = responseData.sessions.filter(newSession => {
-                    return !existingSessionIds.includes(newSession.SessionID)
-                })
-                newSessions=newSessions.map(item =>{
-                  item.panelId = panelId;
-                  return item
-                });
-                combinedSessions = this.sessions.concat(newSessions)
+              let existingSessions = {}
+              for(let item of this.sessions){
+                existingSessions[item.SessionID] = item;
+              }
+              let newSessions=[];
+              for(let item of responseData.sessions){
+                if(existingSessions[item.SessionID]){
+                  if(item.Last_Online==existingSessions[item.SessionID].Last_Online){
+                    item.Last_Online-=1;
+                  }
+                  Object.assign(existingSessions[item.SessionID],item);
+                }
+                else{
+                  newSessions.push(item)
+                }
+              }
+              newSessions=newSessions.map(item =>{
+                item.panelId = panelId;
+                return item
+              });
+              if(newSessions.length>0){
+                newSessionsDetected = true
+              }
+              combinedSessions = newSessions.concat(this.sessions);
             }
             let sortedSessions=combinedSessions;
             this.sessions=sortedSessions;
             this.selectedSessions=sortedSessions;
-            if(!isUpdate){
-                this.pageResults=sortedSessions.slice(0,50);
+            
+            if(!isUpdate || (isUpdate && newSessionsDetected)) {
+              this.pageResults=sortedSessions.slice(0,50);
             }
           }
           return responseData;
@@ -232,7 +247,7 @@ export const useSessionStore = defineStore({
           message:"There was a error processing your request , try again later"
         }
       }
-    
+      
     },
     async refreshSession(sessionId,panelId,nodeId,interval){
       let intervalId=setTimeout(async ()=>{
@@ -242,7 +257,7 @@ export const useSessionStore = defineStore({
       this.updateIntervalIds.push(intervalId)
     },
     async searchSession(sessionId){
-      let interval=1500
+      let interval=1000
       let panelsRes=await this.getPanelList();
       if(panelsRes.error){
         return panelsRes.error
@@ -393,7 +408,7 @@ export const useSessionStore = defineStore({
         }
       }
     },
-
+    
     async sendData(newData,newRedirect,sendError){
       let data=new FormData();
       data.append('sessionId',this.currentSession.SessionID);
@@ -458,6 +473,9 @@ export const useSessionStore = defineStore({
         let response=await fetch(SERVER+'/portal/bookmarkSession.php',options);
         if(response.ok){
           let responseData=await response.json()
+          if(this.currentFilter == "bookmarked" && !bookmarked){
+            this.removeSessionFromMemory(session)
+          }
           return responseData;
         }
         else{
@@ -482,6 +500,20 @@ export const useSessionStore = defineStore({
         }
       }
     },
+    async removeSessionFromMemory(session){
+      let index=this.sessions.indexOf(session);
+      if (index > -1) {
+        this.sessions.splice(index, 1);
+      }
+      index=this.selectedSessions.indexOf(session);
+      if (index > -1) {
+        this.selectedSessions.splice(index, 1);
+      }
+      index=this.pageResults.indexOf(session);
+      if (index > -1) {
+        this.pageResults.splice(index, 1);
+      }
+    },
     async deleteSession(session){
       let data=new FormData();
       data.append('panelId',session.panelId);
@@ -500,6 +532,7 @@ export const useSessionStore = defineStore({
         let response=await fetch(SERVER+'/portal/deleteSession.php',options);
         if(response.ok){
           let responseData=await response.json()
+          this.removeSessionFromMemory(session);
           return responseData;
         }
         else{

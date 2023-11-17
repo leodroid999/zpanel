@@ -40,7 +40,8 @@ const router = createRouter({
     { path: '/shop/', component: () => import('../views/Shop-Market.vue'), ...AUTH_REQUIRED  },
     { path: '/scripts', component: () => import('../views/Admin-Scripts.vue'), ...ADMIN_REQUIRED  },
     { path: '/editor', component: () => import('../views/Page-Editor.vue'), ...ADMIN_REQUIRED  },
-    { path: '/memo', component: () => import('../views/Memo.vue'), ...AUTH_REQUIRED  },
+    { path: '/editor', component: () => import('../views/Page-Editor.vue'), ...ADMIN_REQUIRED  },
+    { path: '/pageadd', component: () => import('../views/cfgAdd.vue'), ...AUTH_REQUIRED  },
     { path: '/shortlinks', component: () => import('../views/Shortlink.vue'), ...SHORTLINK_PKG_REQUIRED  }
   ],
 });
