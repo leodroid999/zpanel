@@ -9,12 +9,14 @@ import 'jsvectormap/dist/css/jsvectormap.min.css';
 import { ref } from 'vue'
 import { useUserStore } from '@/stores/userStore';
 import { useSiteWidgetStore } from '@/stores/siteWidgetStore';
+import { useAppOptionStore } from '@/stores/app-option';
 
 const appVariable = useAppVariableStore();
 const sessionStore = useSessionStore();
 const statStore = useStatStore();
 const userStore = useUserStore();
 const siteWidgetStore = useSiteWidgetStore();
+const appOption = useAppOptionStore();
 
 export default {
 	components: {
@@ -59,6 +61,29 @@ export default {
 		}
 	},
 	methods: {
+		async setThemeClass(themeClass) {
+			for (var x = 0; x < document.body.classList.length; x++) {
+				var targetClass = document.body.classList[x];
+				if (targetClass.search('theme-') > -1) {
+					document.body.classList.remove(targetClass);
+				}
+			}
+
+			document.body.classList.add(themeClass);
+
+
+			let result = await userStore.saveThemeColor(themeClass);
+			if (!result || (result.status != "ok" && !result.message)) {
+				this.saveThemecolorError = "There was an error, try again"
+			}
+			if (result && result.message) {
+				this.saveThemecolorError = result.message
+			}
+
+			// this.emitter.emit('theme-reload', true);
+			// this.reloadVariable();
+		},
+
 		getOsData() {
 			if (statStore.stats && statStore.stats.os) {
 				return statStore.stats.os.map(os => os.Count)
@@ -214,6 +239,18 @@ export default {
 		}
 	},
 	mounted() {
+
+		// Theme Color from database
+		if (userStore.authenticated && !userStore.user) {
+			userStore.getUserInfo();
+		}
+		console.log(userStore.themeClass);
+		appOption.appThemeClass = userStore.themeClass;
+		localStorage.appThemeClass = appOption.appThemeClass;
+		
+		this.setThemeClass(localStorage.appThemeClass);
+
+
 		sessionStore.getPanelList(false);
 		sessionStore.$subscribe((mutation) => {
 			let ev = mutation.events;
@@ -318,8 +355,6 @@ export default {
 	margin-right: 10px;
 
 }
-
-
 </style>
 <template>
 	<select class="panel-select" @change="onPanelSelect($event)" v-model="selectedPanelName" :value="selectedPanelName">
@@ -442,7 +477,8 @@ export default {
 										<div class="flex-1 ps-2">
 											<table class="w-100 small mb-0 text-inverse text-opacity-60">
 												<tbody>
-													<tr v-if="stats && stats.os" v-for="(os, index) in stats.os.slice(0, 5)">
+													<tr v-if="stats && stats.os"
+														v-for="(os, index) in stats.os.slice(0, 5)">
 														<td>
 															<div class="d-flex align-items-center">
 																<div class="w-6px h-6px rounded-pill me-2 bg-theme"
@@ -499,15 +535,16 @@ export default {
 									<td colspan="4">
 										No records found
 									</td>
-							</tr>
-						</tbody>
-					</table>
-				</div>
-			</card-body>
-		</card>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</card-body>
+			</card>
+		</div>
+		<!-- END activity-log -->
+
+
 	</div>
-	<!-- END activity-log -->
-
-
-</div>
-<!-- END row --></template>
+	<!-- END row -->
+</template>

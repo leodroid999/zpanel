@@ -165,7 +165,7 @@ export const useSessionStore = defineStore({
       if(!isUpdate){
         let sessionListUpdateInterval=setInterval(()=>{
           this.getSessionList(panelId,nodeId,true,true,filter)
-        },5000);
+        },1500);
         this.updateIntervalIds.push(sessionListUpdateInterval);
       }
       let options:any={
@@ -257,7 +257,7 @@ export const useSessionStore = defineStore({
       this.updateIntervalIds.push(intervalId)
     },
     async searchSession(sessionId){
-      let interval=1000
+      let interval=1500
       let panelsRes=await this.getPanelList();
       if(panelsRes.error){
         return panelsRes.error

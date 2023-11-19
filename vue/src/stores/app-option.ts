@@ -4,6 +4,7 @@ export const useAppOptionStore = defineStore({
   id: "appOption",
   state: () => {
     return {
+    	appMode: '',
     	appThemeClass: '',
     	appCoverClass: '',
 			appBoxedLayout: false,
@@ -12,7 +13,6 @@ export const useAppOptionStore = defineStore({
 			appSidebarCollapsed: false,
 			appSidebarMobileToggled: false,
 			appSidebarMobileClosed: false,
-			appSidebarToggled: false,
 			appSidebarHide: false,
 			appContentFullHeight: false,
 			appContentClass: '',

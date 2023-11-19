@@ -10,6 +10,7 @@
     import highlightjs from '@/components/plugins/Highlightjs.vue';
     import VueTableLite from 'vue3-table-lite'
     import navscrollto from '@/components/app/NavScrollTo.vue';
+    import { useAppOptionStore } from '@/stores/app-option';
     import {
         useAppVariableStore
     } from '@/stores/app-variable';
@@ -22,6 +23,7 @@
 
     const appVariable = useAppVariableStore();
     const sessionStore = useSessionStore();
+    const appOption = useAppOptionStore();
 
     let SessionIDSearch = ref("");
     let panelIDPageSearch = ref("");
@@ -405,15 +407,23 @@
             }
         },
         mounted() {
+            console.log("mounted");
+            appOption.appSidebarCollapsed = true;
             sessionStore.currentFilter = null;
             sessionStore.selectedPanelName = "ALL"
             this.loadPanelList()
-            new ScrollSpy(document.body, {
-                target: '#sidebar-bootstrap',
-                offset: 200
-            })
-        }
+            // new ScrollSpy(document.body, {
+            //     target: '#sidebar-bootstrap',
+            //     offset: 200
+            // })
+        },
+        beforeUnmount() {
+		appOption.appSidebarCollapsed = false;
+	}
     }
+
+
+    
     </script>
     <style>
         .log-select {

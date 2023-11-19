@@ -3,6 +3,7 @@ import navscrollto from '@/components/app/NavScrollTo.vue';
 import { ScrollSpy } from 'bootstrap';
 import { useSessionStore } from '@/stores/sessionStore';
 import { useAppVariableStore } from '@/stores/app-variable';
+import { useAppOptionStore } from '@/stores/app-option';
 import { onMounted, ref } from "vue";
 import { Modal } from "bootstrap";
 import jsVectorMap from 'jsvectormap';
@@ -11,6 +12,7 @@ import 'jsvectormap/dist/css/jsvectormap.min.css';
 
 const appVariable = useAppVariableStore();
 const sessionStore = useSessionStore();
+const appOption = useAppOptionStore()
 const modalElement = null;
 
 export default {
@@ -254,6 +256,7 @@ export default {
 		},
 	},
 	mounted() {
+		appOption.appSidebarCollapsed = true;
 		new ScrollSpy(document.body, {
 			target: '#sidebar-bootstrap',
 			offset: 200
@@ -281,6 +284,9 @@ export default {
 				}, 50);
 			});
 		});
+	},
+	beforeUnmount(){
+		appOption.appSidebarCollapsed = false;
 	}
 }
 </script>

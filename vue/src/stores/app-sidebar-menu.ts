@@ -86,6 +86,11 @@ const adminOptions=[
     'url': '/editor',
     'icon': 'bi bi-hammer',
     'text': 'Editor'
+  },
+  {
+    'url': '/collaps',
+    'icon': 'bi bi-circle',
+    'text': 'collaps'
   }
 ]
 

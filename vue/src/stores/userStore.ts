@@ -19,7 +19,8 @@ export const useUserStore = defineStore({
         newNotifications:null,
         enabledNotificationSound:false,
         notificationsSeen: new Set(),
-        memo: ""
+        memo: "",
+        themeClass : "",
     }
   },
   actions:{
@@ -139,6 +140,7 @@ export const useUserStore = defineStore({
             this.authenticated=true;
             this.user=responseData.user;
             this.memo=atob(responseData.user.memo);
+            this.themeClass=responseData.user.themeColor;
           }
           return responseData;
         }
@@ -218,6 +220,40 @@ export const useUserStore = defineStore({
       }
       try{
         let response=await fetch(SERVER+'/portal/saveUserMemo.php',options);
+        if(response.ok){
+          let responseData=await response.json()
+          this.getUserInfo()
+          return responseData;
+        }
+        else{
+          return {
+            error:"SERVER_ERROR",
+            message:"There was a error processing your request , try again later"
+          }
+        }
+      }
+      catch(err){
+        console.error(err);
+        return {
+          error:"SERVER_ERROR",
+          message:"There was a error processing your request , try again later"
+        }
+      }
+    },
+
+
+    // Update Theme Color
+    async saveThemeColor(colorClass){
+      let data=new FormData();
+      data.append("color", colorClass);
+
+      let options={
+        method:"POST",
+        body: data,
+        credentials: 'include'
+      }
+      try{
+        let response=await fetch(SERVER+'/portal/saveUserTheme.php',options);
         if(response.ok){
           let responseData=await response.json()
           this.getUserInfo()
