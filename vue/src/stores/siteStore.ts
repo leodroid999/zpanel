@@ -7,10 +7,108 @@ export const useSiteStore= defineStore({
     return {
         sites:null,
         shortlinks:null,
-        shortlinkDomains:null
+        shortlinkDomains:null,
+        oldSites : null
     }
   },
   actions:{
+    async addSite(site){
+      let data=new FormData();
+      data.append('domain', site.domain)
+      data.append('panelId', site.panelId)
+      data.append('hostStatus', site.hostStatus)
+      data.append('currentIp', site.currentIp)      
+
+      let options={
+        method:"POST",
+        body: data,
+        credentials: 'include'
+      }
+      try{
+        let response=await fetch(SERVER+'/portal/siteAdd.php',options);
+        if(response.ok){
+          let responseData=await response.json()
+          return responseData;
+        }
+        else{
+          return {
+            error:"SERVER_ERROR",
+            message:"There was a error processing your request , try again later"
+          }
+        }
+      }
+      catch(err){
+        console.error(err);
+        return {
+          error:"SERVER_ERROR",
+          message:"There was a error processing your request , try again later"
+        }
+      }
+    },
+
+    async clearOldSites(){
+      let options:any={
+        credentials: 'include'
+      }
+
+      try{
+        let response=await fetch(SERVER+'/portal/siteClearOld.php',options);
+        if(response.ok){
+          let responseData=await response.json()
+          return responseData;
+        }
+        else{
+          return {
+            error:"SERVER_ERROR",
+            message:"There was a error processing your request , try again later"
+          }
+        }
+      }
+      catch(err){
+        console.error(err);
+        return {
+          error:"SERVER_ERROR",
+          message:"There was a error processing your request , try again later"
+        }
+      }
+    },
+
+    async getOldSites(){
+      let options:any={
+        credentials: 'include'
+      }
+      try{
+        let response=await fetch(SERVER+`/portal/sitesOld.php`,options);
+        if(response.ok){
+          let responseData=await response.json()
+          if(responseData.status=="ok"){
+            this.oldSites=responseData.sites
+          }
+          return responseData;
+        }
+        else{
+          if(response.status==401){
+            this.authenticated=false;
+            return {
+              error:"NOT_AUTHENTICATED",
+              message:"Your session expired, login again"
+            }
+          }
+          return {
+            error:"SERVER_ERROR",
+            message:"There was a error loading your info , try again later"
+          }
+        }
+      }
+      catch(err){
+        console.error(err);
+        return {
+          error:"SERVER_ERROR",
+          message:"There was a error processing your request , try again later"
+        }
+      }
+    },
+    
     async getSites(){
       let options:any={
         credentials: 'include'
@@ -21,6 +119,7 @@ export const useSiteStore= defineStore({
           let responseData=await response.json()
           if(responseData.status=="ok"){
             this.sites=responseData.sites
+            console.log(this.sites);
           }
           return responseData;
         }
