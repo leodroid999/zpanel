@@ -20,9 +20,17 @@ export default {
             processingPurchase: false,
             postPurchase: false,
             searchTags: [],
+            searchType: '',
+            countries: ['NL', 'BE', 'FR', 'USA', 'DE', 'IT', 'AT'],
+            searchCountries: [],
         }
     },
     methods: {
+        setTags(type) {
+            this.searchType = type;
+            if (type != 'all')
+                this.searchTags = [type];
+        },
         loadProducts: function () {
             shopStore.getProducts()
         },
@@ -85,13 +93,65 @@ export default {
         },
         renderTagColor(tagColor) {
             return "bg-" + tagColor;
+        },
+        addCountry(event) {
+            var value = event.target.value;
+            if (this.searchTags.indexOf(value) == -1)
+                this.searchTags.push(value);
         }
     },
     computed: {
+        availableCountries() {
+            return this.countries.filter(opt => this.searchCountries.indexOf(opt) === -1)
+        },
         products() {
             console.log(shopStore.products);
-            return shopStore.products
+
+            var products = shopStore.products;
+            var self = this;
+            this.searchCountries = [];
+
+            if (this.searchTags.length) {
+                for (var j = 0; j < self.searchTags.length; j++) {
+
+                    if(self.countries.indexOf(self.searchTags[j]) != -1){
+                        this.searchCountries.push(self.searchTags[j]);
+                        continue;
+                    }
+
+                    products = products.filter(function (product) {
+                        var matched = false;
+                        for (var i = 0; i < product.tags.length; i++) {
+
+                            if (product.tags[i].tagLabel == self.searchTags[j]) {
+                                matched = true;
+                                break;
+                            }
+                        }
+                        return matched;
+                    })
+                }
+            }
+
+            if (this.searchCountries.length) {
+                for (var j = 0; j < self.searchCountries.length; j++) {
+                    products = products.filter(function (product) {
+                        var matched = false;
+                        for (var i = 0; i < product.tags.length; i++) {
+
+                            if (product.tags[i].tagLabel == self.searchCountries[j]) {
+                                matched = true;
+                                break;
+                            }
+                        }
+                        return matched;
+                    })
+                }
+            }
+
+            return products
         },
+
         totalPrice() {
             if (this.selectedProduct) {
                 let days = this.dayDifference(this.selectedDates[0], this.selectedDates[1])
@@ -103,7 +163,7 @@ export default {
                 }
             }
             return 0;
-        },
+        }
     },
     mounted() {
         this.loadProducts()
@@ -140,13 +200,54 @@ h5 {
         <li class="breadcrumb-item">Shop</li>
         <li class="breadcrumb-item active">Panels</li>
     </ul>
+
+    <ul class="nav nav-tabs nav-tabs-v2">
+        <li class="nav-item me-4"><a href="#home" class="nav-link active" data-bs-toggle="tab"
+                @click="setTags('all')">All</a></li>
+        <li class="nav-item me-4"><a href="#profile" class="nav-link" data-bs-toggle="tab"
+                @click="setTags('leads')">Leads</a></li>
+        <li class="nav-item me-4"><a href="#profile" class="nav-link" data-bs-toggle="tab"
+                @click="setTags('panels')">Panels</a></li>
+        <li class="nav-item me-4 dropdown">
+            <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                Other
+            </a>
+            <div class="dropdown-menu">
+                <a href="#dropdown1" class="dropdown-item" data-bs-toggle="tab" @click="setTags('accounts')">Accounts</a>
+                <a href="#dropdown2" class="dropdown-item" data-bs-toggle="tab" @click="setTags('cosmetics')">Cosmetics</a>
+            </div>
+        </li>
+    </ul>
+    <div class="tab-content pt-3">
+        <div class="tab-pane fade show active" id="home">
+
+        </div>
+        <div class="tab-pane fade" id="profile"></div>
+        <div class="tab-pane fade" id="dropdown1"></div>
+        <div class="tab-pane fade" id="dropdown2"></div>
+    </div>
+    <div>
+
+    </div>
+
+    <select class="form-select" aria-label="Default select example" @change="addCountry($event)">
+        <option selected disabled>Filter on Country</option>
+        <option v-for="country in availableCountries" :value="country">{{ country }}</option>
+    </select>
+
+    <!-- START tags-->
     <h1 class="page-header"><small></small></h1>
     <p class="tags-input-container">
+
     <div>
-        <label for="tags-basic">Type a new tag and press enter</label>
+        <label for="tags-basic"><b>Filter based on tags:</b><br></label>
         <b-form-tags input-id="tags-basic" v-model="searchTags"></b-form-tags>
     </div>
     </p>
+    <!-- <button type="button" class="btn btn-outline-theme btn-lg" @click="filter">Filter</button> -->
+
+    <!-- END tags-->
+
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
         <div class="col" v-if="products" v-for="product in products">
             <div class="card">

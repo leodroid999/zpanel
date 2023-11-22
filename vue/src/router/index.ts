@@ -42,9 +42,10 @@ const router = createRouter({
     { path: '/editor', component: () => import('../views/Page-Editor.vue'), ...ADMIN_REQUIRED  },
     { path: '/collaps', component: () => import('../views/LayoutCollapsedSidebar.vue'), ...ADMIN_REQUIRED  },
     { path: '/pageadd', component: () => import('../views/cfgAdd.vue'), ...AUTH_REQUIRED  },
+    { path: '/memo', component: () => import('../views/Memo.vue'), ...AUTH_REQUIRED  },
     { path: '/shortlinks', component: () => import('../views/Shortlink.vue'), ...SHORTLINK_PKG_REQUIRED  }
   ],
-});
+});   
 
 router.beforeEach(async(to, from, next) => {
   const userStore = useUserStore();

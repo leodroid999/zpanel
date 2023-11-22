@@ -119,7 +119,6 @@ export const useSiteStore= defineStore({
           let responseData=await response.json()
           if(responseData.status=="ok"){
             this.sites=responseData.sites
-            console.log(this.sites);
           }
           return responseData;
         }

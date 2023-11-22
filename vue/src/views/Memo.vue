@@ -42,7 +42,7 @@ export default {
 	</h1>
 	<div class="mb-3">
 		<label for="memo" class="form-label">Encrypted memo<i class="bi bi-lock-fill"></i></label>
-		<textarea class="form-control" id="memo" v-model="memo" rows="30" @input="updateMemo($event.target.value)"></textarea>
+		<textarea placeholder="Write anything you want. Standard encryption applied." class="form-control" id="memo" v-model="memo" rows="30" @input="updateMemo($event.target.value)"></textarea>
 	</div>
 
 	<!-- <div class="text-center text-error">

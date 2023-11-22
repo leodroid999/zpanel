@@ -27,6 +27,7 @@ export default {
 			sendDataModal:null,
 			sendError:false,
 			modalShowSendWithError:false,
+			
 			fields:{}
 		}
 	},

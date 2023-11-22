@@ -15,15 +15,17 @@ export const useSessionStore = defineStore({
       currentSession:null,
       scriptOutput:"",
       updateIntervalIds:[],
-      currentFilter:null
+      currentFilter:null,
+      cancelSessionReload:false
     }
   },
   actions:{
     async stopUpdates(){
+      this.cancelSessionReload=true;
       for(let interval of this.updateIntervalIds){
         clearInterval(interval)
       }
-      this.updateIntervalIds.length=0;
+      this.updateIntervalIds=[]
     },
     async clearSessions(){
       this.sessions=[],
@@ -251,6 +253,10 @@ export const useSessionStore = defineStore({
     },
     async refreshSession(sessionId,panelId,nodeId,interval){
       let intervalId=setTimeout(async ()=>{
+        if(this.cancelSessionReload){
+            this.cancelSessionReload=false;
+            return;
+        }
         await this.getSession(sessionId,panelId,nodeId)
         this.refreshSession(sessionId,panelId,nodeId)
       },interval)
