@@ -13,6 +13,7 @@ function appSidebarMobileToggled() {
 
 onMounted(() => {
 	appSidebarMenu.reloadMenu();
+	console.log(appSidebarMenu);
 	var handleSidebarMenuToggle = function(menus) {
 		menus.map(function(menu) {
 			menu.onclick = function(e) {

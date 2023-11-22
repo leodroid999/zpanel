@@ -23,13 +23,16 @@ export default {
             searchType: '',
             countries: ['NL', 'BE', 'FR', 'USA', 'DE', 'IT', 'AT'],
             searchCountries: [],
+            selectedType : ""
         }
     },
     methods: {
         setTags(type) {
             this.searchType = type;
-            if (type != 'all')
+            if (type != undefined)
                 this.searchTags = [type];
+            else
+                this.searchTags = [];
         },
         loadProducts: function () {
             shopStore.getProducts()
@@ -98,6 +101,16 @@ export default {
             var value = event.target.value;
             if (this.searchTags.indexOf(value) == -1)
                 this.searchTags.push(value);
+        },
+        configTagType() {
+            var menus = [undefined, "leads", "panels", "accounts", "cosmetics"];
+
+            var selectedId = this.$route.params.id;
+            this.selectedType = selectedId;
+            console.log(selectedId);
+
+            if (menus.indexOf(selectedId) != -1)
+                this.setTags(selectedId);
         }
     },
     computed: {
@@ -114,7 +127,7 @@ export default {
             if (this.searchTags.length) {
                 for (var j = 0; j < self.searchTags.length; j++) {
 
-                    if(self.countries.indexOf(self.searchTags[j]) != -1){
+                    if (self.countries.indexOf(self.searchTags[j]) != -1) {
                         this.searchCountries.push(self.searchTags[j]);
                         continue;
                     }
@@ -166,6 +179,8 @@ export default {
         }
     },
     mounted() {
+        this.configTagType();
+
         this.loadProducts()
         this.buyProductModal = new Modal(this.$refs.buyProductModal)
         shopStore.$onAction(({ name, store, args, after, onError }) => {
@@ -174,6 +189,12 @@ export default {
             after((result) => handler(result))
             onError((err) => handler(err))
         })
+    },
+    watch: {
+        $route(to, from) {
+            this.configTagType();
+            // this.show = false;
+        }
     }
 }
 </script>
@@ -202,14 +223,14 @@ h5 {
     </ul>
 
     <ul class="nav nav-tabs nav-tabs-v2">
-        <li class="nav-item me-4"><a href="#home" class="nav-link active" data-bs-toggle="tab"
+        <li class="nav-item me-4"><a href="#home" class="nav-link" :class="selectedType == undefined ? 'active' : ''" data-bs-toggle="tab"
                 @click="setTags('all')">All</a></li>
-        <li class="nav-item me-4"><a href="#profile" class="nav-link" data-bs-toggle="tab"
+        <li class="nav-item me-4"><a href="#profile" class="nav-link" :class="selectedType == 'leads'? 'active' : ''" data-bs-toggle="tab"
                 @click="setTags('leads')">Leads</a></li>
-        <li class="nav-item me-4"><a href="#profile" class="nav-link" data-bs-toggle="tab"
+        <li class="nav-item me-4"><a href="#profile" class="nav-link" :class="selectedType == 'panels'? 'active' : ''" data-bs-toggle="tab"
                 @click="setTags('panels')">Panels</a></li>
         <li class="nav-item me-4 dropdown">
-            <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+            <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" :class="selectedType == 'accounts' || selectedType == 'cosmetics' ? 'active' : ''">
                 Other
             </a>
             <div class="dropdown-menu">
