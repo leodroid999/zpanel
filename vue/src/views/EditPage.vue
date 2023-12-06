@@ -70,7 +70,7 @@ export default {
             this.blueprint.index = blueprintIndex;
 
             console.log(this.blueprint.tokens);
-            this.initIssues();
+            this.checkIssues();
         },
         async updateBlueprint(event) {
             let response = await editorStore.saveBlueprint(this.blueprint);
@@ -118,7 +118,7 @@ export default {
             }, 1000);
         },
 
-        initIssues() {
+        checkIssues() {
             this.issues = [];
 
             if (this.blueprint.assetDir == null || this.blueprint.assetDir == '')
@@ -411,6 +411,7 @@ h4 {
                             </tr>
                         </tbody>
                     </table>
+                    <button @click="checkIssues" class="btn gap btn-outline-theme btn-md float-end">Check for problems</button>
                 </div>
                 <div class="card-arrow">
                     <div class="card-arrow-top-left"></div>
@@ -609,11 +610,19 @@ h4 {
                             </div>
                         </div>
                     </div>
-                    <div class="text-center text-error">
+                    <div class="mb-3">
+                        <label class="form-label">Enter Backlink</label>
+                        <div class="row row-space-10">
+                            <div class="col-8">
+                                <input class="form-control" type="text" v-model="blueprint.default_backlink" placeholder="Backlink" />
+                            </div>
+                        </div>
+                    </div>
+                    <!-- <div class="text-center text-error">
                         <div v-if="removeTokenError" class="alert alert-warning">
                             <span v-if="removeTokenError">{{ removeTokenError }}</span>
                         </div>
-                    </div>
+                    </div> -->
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-default" data-bs-dismiss="modal">Close</button>

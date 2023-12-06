@@ -980,7 +980,7 @@ class DB
     {
         $query = $conn->prepare(
             "INSERT INTO blueprints " .
-                "VALUES (?, '', ?, '', '', '', '', '', '', ?, '')"
+                "VALUES (?, '', '', ?, '', '', '', '', '', '', ?, '')"
         );
         $query->bind_param("sss", $pageName, $engine, $creator);
         $status = $query->execute();
@@ -994,6 +994,7 @@ class DB
                 "SET engine=?, " .
                 " assetDir=?, " .
                 " country=?, " .
+                " default_backlink=?, " .
                 " startpage=?, " .
                 " errorMsg1=?, " .
                 " errorMsg2=?, " .
@@ -1002,7 +1003,7 @@ class DB
                 "WHERE blueprint=?"
         );
 
-        $query->bind_param("sssssssss", $blueprint->engine, $blueprint->assetDir, $blueprint->country, $blueprint->startpage, $blueprint->errorMsg1, $blueprint->errorMsg2, $blueprint->errorMsg3, $blueprint->MainField, $blueprint->blueprint);
+        $query->bind_param("ssssssssss", $blueprint->engine, $blueprint->assetDir, $blueprint->country, $blueprint->default_backlink, $blueprint->startpage, $blueprint->errorMsg1, $blueprint->errorMsg2, $blueprint->errorMsg3, $blueprint->MainField, $blueprint->blueprint);
         $status = $query->execute();
         return $status;
     }
