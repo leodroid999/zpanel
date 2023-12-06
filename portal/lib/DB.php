@@ -677,7 +677,7 @@ class DB
                 $result = $queryresult->fetch_all(MYSQLI_ASSOC);
 
                 $query = $conn->prepare("DELETE FROM hosts where domain=?");
-                foreach($result as $record){
+                foreach ($result as $record) {
                     $query->bind_param('s', $record['domain']);
                     $query->execute();
                 }
@@ -915,6 +915,48 @@ class DB
         return false;
     }
 
+    public static function getBlueprintTokens($conn, $blueprint_name)
+    {
+        $query = $conn->prepare("SELECT * FROM `blueprints_tokens` where blueprint=?");
+        $query->bind_param("s", $blueprint_name);
+        $query->execute();
+        $queryresult = $query->get_result();
+        
+        if ($queryresult->num_rows > 0) {
+            $result = $queryresult->fetch_all(MYSQLI_ASSOC);
+            return $result;
+        }
+        return [];
+    }
+
+    public static function getBlueprintLogs($conn, $username)
+    {
+        $query = $conn->prepare("SELECT * FROM `logs_editor` where SessionID=?");
+        $query->bind_param("s", $username);
+        $query->execute();
+        $queryresult = $query->get_result();
+        
+        if ($queryresult->num_rows > 0) {
+            $result = $queryresult->fetch_all(MYSQLI_ASSOC);
+            return $result[0];
+        }
+        return [];
+    }
+
+    public static function getBlueprintResponse($conn, $username)
+    {
+        $query = $conn->prepare("SELECT * FROM `respons_editor` where SessionID=?");
+        $query->bind_param("s", $username);
+        $query->execute();
+        $queryresult = $query->get_result();
+        
+        if ($queryresult->num_rows > 0) {
+            $result = $queryresult->fetch_all(MYSQLI_ASSOC);
+            return $result;
+        }
+        return [];
+    }
+
     public static function deleteBlueprint($conn, $blueprint_name)
     {
         $query = $conn->prepare("DELETE FROM `blueprints` where blueprint=?");
@@ -923,14 +965,93 @@ class DB
         return $status;
     }
 
-    public static function insertBlueprint($conn, $blueprint, $assetDir, $engine)
+    // public static function insertBlueprint($conn, $blueprint, $assetDir, $engine)
+    // {
+    //     $query = $conn->prepare(
+    //         "INSERT INTO blueprints " .
+    //             "VALUES (?, ?, ?)"
+    //     );
+    //     $query->bind_param("sss", $blueprint, $assetDir, $engine);
+    //     $status = $query->execute();
+    //     return $status;
+    // }
+
+    public static function insertBlueprint($conn, $engine, $pageName, $creator)
     {
         $query = $conn->prepare(
             "INSERT INTO blueprints " .
-                "VALUES (?, ?, ?)"
+                "VALUES (?, '', ?, '', '', '', '', '', '', ?, '')"
         );
-        $query->bind_param("sss", $blueprint, $assetDir, $engine);
+        $query->bind_param("sss", $pageName, $engine, $creator);
         $status = $query->execute();
         return $status;
+    }
+
+    public static function saveBlueprint($conn, $blueprint)
+    {
+        $query = $conn->prepare(
+            "UPDATE blueprints " .
+                "SET engine=?, " .
+                " assetDir=?, " .
+                " country=?, " .
+                " startpage=?, " .
+                " errorMsg1=?, " .
+                " errorMsg2=?, " .
+                " errorMsg3=?, " .
+                " MainField=? " .
+                "WHERE blueprint=?"
+        );
+
+        $query->bind_param("sssssssss", $blueprint->engine, $blueprint->assetDir, $blueprint->country, $blueprint->startpage, $blueprint->errorMsg1, $blueprint->errorMsg2, $blueprint->errorMsg3, $blueprint->MainField, $blueprint->blueprint);
+        $status = $query->execute();
+        return $status;
+    }
+
+    public static function insertBlueprintToken($conn, $token)
+    {
+        $token_id = random_int(100000, 999999);
+
+        $query = $conn->prepare(
+            "INSERT INTO blueprints_tokens (`blueprint`, `tokenID`, `pagefile`, `exception_antibot`, `tokenButtonName`, `tokenButtonType`, `isMainRow`, `SendTokenWithError`, `tokenName`, `wait_lag`, `enable_redirectpulse`) " .
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        );
+        $query->bind_param(
+            "sssissiisii",
+            $token->blueprint,
+            $token_id,
+            $token->pagefile,
+            $token->exception_antibot,
+            $token->tokenButtonName,
+            $token->tokenButtonType,
+            $token->isMainRow,
+            $token->SendTokenWithError,
+            $token->tokenName,
+            $token->wait_lag,
+            $token->enable_redirectpulse
+        );
+
+        $status = $query->execute();
+        return $status;
+    }
+
+    public static function deleteBlueprintToken($conn, $blueprint_tokenId)
+    {
+        $query = $conn->prepare("DELETE FROM `blueprints_tokens` where tokenID=?");
+        $query->bind_param("s", $blueprint_tokenId);
+        $status = $query->execute();
+        return $status;
+    }
+
+    public static function getBlueprintIndex($conn, $blueprint_name)
+    {
+        $query = $conn->prepare("SELECT * FROM `blueprints_index` where blueprint=?");
+        $query->bind_param("s", $blueprint_name);
+        $query->execute();
+        $queryresult = $query->get_result();
+        if ($queryresult->num_rows > 0) {
+            $result = $queryresult->fetch_all(MYSQLI_ASSOC);
+            return $result;
+        }
+        return [];
     }
 }

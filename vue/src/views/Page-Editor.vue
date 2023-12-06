@@ -11,6 +11,7 @@ export default {
 			cfgFile: null,
 			zipFile: null,
 			engine: null,
+			pageName: '',
 		}
 	},
 	methods: {
@@ -22,12 +23,16 @@ export default {
 			}
 		},
 		url: function (bp, command) {
+			if(command == "View"){
+				return "/editor/edit/" + bp.blueprint;
+			}
 			console.log(bp.blueprint + " " + command);
 		},
 		uploadBlueprint: async function () {
 			console.log(this.cfgFile);
 			console.log(this.zipFile);
-			let response = await editorStore.uploadBlueprintInfo(this.cfgFile, this.zipFile, this.engine);
+			let response = await editorStore.uploadBlueprintInfo(this.engine, this.pageName);
+			// let response = await editorStore.uploadBlueprintInfo(this.cfgFile, this.zipFile, this.engine);
 			this.blueprints = response.blueprints;
 		},
 		cfgFileSelected: function (e) {
@@ -44,6 +49,7 @@ export default {
 	},
 	computed: {
 		canUpload() {
+			return this.engine !== null && this.engine !== "" && this.pageName !== "";
 			return this.cfgFile !== null && this.zipFile !== null && this.engine !== null && this.engine !== "";
 		}
 	},
@@ -80,9 +86,9 @@ export default {
 				<a href="#" data-bs-toggle="dropdown" class="text-inverse text-opacity-50" aria-expanded="false"><i
 						class="fa fa-ellipsis-h"></i></a>
 				<div class="dropdown-menu dropdown-menu-end" style="">
-					<a href="#" @click="url(blueprint, 'View')" class="dropdown-item">View</a>
+					<a :href="url(blueprint, 'View')" class="dropdown-item">View</a>
 					<button @click="deleteBlueprint(blueprint)" class="dropdown-item">Delete</button>
-					<a href="#" @click="url(blueprint, 'Report')" class="dropdown-item">Report</a>
+					<a :href="url(blueprint, 'Report')" class="dropdown-item">Report</a>
 				</div>
 			</div>
 		</div>
@@ -102,13 +108,17 @@ export default {
 					<button class="btn-close" data-bs-dismiss="modal"></button>
 				</div>
 				<div class="modal-body">
-					<div class="form-group mb-3">
+					<!-- <div class="form-group mb-3">
 						<label class="form-label" for="exampleFormControlFile1">CFG File</label>
 						<input type="file" @change="cfgFileSelected" class="form-control" id="exampleFormControlFile1" accept=".cfg">
 					</div>
 					<div class="form-group mb-3">
 						<label class="form-label" for="exampleFormControlFile2">Zip File</label>
 						<input type="file" @change="zipFileSelected" class="form-control" id="exampleFormControlFile2" accept=".zip">
+					</div> -->
+					<div class="form-group mb-3">
+						<label class="form-label" for="exampleFormControlFile3">PageName</label>
+						<input type="text" v-model="pageName" class="form-control">
 					</div>
 					<div class="form-group mb-3">
 						<label class="form-label" for="exampleFormControlFile3">Engine</label>

@@ -67,6 +67,10 @@ let baseMenu = [
         url: "/shop/cosmetics",
         text: "Cosmetics",
       },
+      {
+        url: "/shop/sell",
+        text: "Sell",
+      },
     ],
   },
   {
@@ -109,7 +113,7 @@ const adminOptions = [
   },
   {
     url: "/editor",
-    icon: "bi bi-hammer",
+    icon: "bi bi-code-slash",
     text: "Editor",
   },
   {

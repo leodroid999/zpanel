@@ -22,25 +22,21 @@ if (!$conn) {
 }
 
 $user = DB::getUser($conn, $userID);
-
 if (!$user) {
     error_log("Error loading user data: " . mysqli_error($conn));
     ErrorHandler::authError();
 }
 
+$cfg = $_FILES['cfg'];
+$zip = $_FILES['zip'];
 $engine = $_POST['engine'];
-$pageName = $_POST['pageName'];
 
-// Create PageName Folder in blueprints
-mkdir("./blueprints/" . $pageName . "/");
-
-error_log("upload Blueprint : " . getcwd());
-
-
-$result = DB::insertBlueprint($conn, $engine, $pageName, $user[0]["username"]);
+$result = DB::insertBlueprint($conn, substr($cfg['name'], 0, strrpos($cfg['name'], ".")), $zip['name'], $engine);
 error_log(var_export($result, true));
 
 if ($result) {
+    move_uploaded_file($_FILES['cfg']['tmp_name'], '../../../../data/' . $_FILES['cfg']['name']);
+    move_uploaded_file($_FILES['zip']['tmp_name'], '../../../../data/' . $_FILES['zip']['name']);
     $blueprints = DB::getBlueprints($conn);
     echo json_encode(
         array(

@@ -1,4 +1,5 @@
 <?php
+
 include "cors.php";
 require "lib/ErrorHandler.php";
 require_once 'lib/DB.php';
@@ -22,38 +23,29 @@ if (!$conn) {
 }
 
 $user = DB::getUser($conn, $userID);
-
 if (!$user) {
     error_log("Error loading user data: " . mysqli_error($conn));
     ErrorHandler::authError();
 }
 
-$engine = $_POST['engine'];
-$pageName = $_POST['pageName'];
+$token = json_decode($_POST['token']);
 
-// Create PageName Folder in blueprints
-mkdir("./blueprints/" . $pageName . "/");
-
-error_log("upload Blueprint : " . getcwd());
-
-
-$result = DB::insertBlueprint($conn, $engine, $pageName, $user[0]["username"]);
-error_log(var_export($result, true));
+$result = DB::insertBlueprintToken($conn, $token);
+// error_log(var_export($result, true));
 
 if ($result) {
-    $blueprints = DB::getBlueprints($conn);
     echo json_encode(
         array(
             "status" => "ok",
             "message" => "Blueprint saved successfully.",
-            "blueprints" => $blueprints
         )
     );
 } else {
     echo json_encode(
         array(
             "status" => "error",
-            "message" => "Error saving blueprint"
+            "message" => "Error saving blueprint",
+            "error" => $result
         )
     );
 }

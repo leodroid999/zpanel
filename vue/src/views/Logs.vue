@@ -408,7 +408,7 @@
         },
         mounted() {
             console.log("mounted");
-            appOption.appSidebarCollapsed = true;
+            //appOption.appSidebarCollapsed = true;
             sessionStore.currentFilter = null;
             sessionStore.selectedPanelName = "ALL"
             this.loadPanelList()

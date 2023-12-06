@@ -257,7 +257,7 @@ export default {
 		},
 	},
 	mounted() {
-		appOption.appSidebarCollapsed = true;
+		//appOption.appSidebarCollapsed = true;
 		new ScrollSpy(document.body, {
 			target: '#sidebar-bootstrap',
 			offset: 200
