@@ -8,15 +8,10 @@
 	}
 }
 
-@keyframes appSidebarMobileBackdrop { 
-	from { background: transparent; } 
-	to { background: $app-sidebar-mobile-backdrop-bg; } 
-}
-
 .app-sidebar-mobile-toggled {
 	@include media-breakpoint-down(md) {
 		& .app-sidebar {
-			animation: appSidebarMobileSlideInLeft .1s ease;
+			display:none;
 			
 			@if ($enable-rtl) {
 				right: 0;
@@ -27,7 +22,6 @@
 		& .app-sidebar-mobile-backdrop:not(.app-sidebar-end) {
 			display: block;
 			background: $app-sidebar-mobile-backdrop-bg;
-			animation: appSidebarMobileBackdrop .1s ease;
 		}
 	}
 }

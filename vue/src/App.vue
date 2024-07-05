@@ -75,9 +75,11 @@ document.querySelector('body').classList.add('app-init');
 	}">
 		<vue3-progress-bar />
 		<app-header v-if="!appOption.appHeaderHide" />
-		<app-sidebar v-if="!appOption.appSidebarHide" />
-		<div class="app-content" v-bind:class="appOption.appContentClass">
-			<router-view></router-view>
+		<div class="app-container">
+			<app-sidebar v-if="!appOption.appSidebarHide" />
+			<div class="app-content" v-bind:class="appOption.appContentClass">
+				<router-view></router-view>
+			</div>
 		</div>
 		<app-footer v-if="appOption.appFooter" />
 	</div>

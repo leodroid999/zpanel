@@ -76,5 +76,4 @@ onMounted(() => {
 			</div>
 		</perfect-scrollbar>
 	</div>
-	<button class="app-sidebar-mobile-backdrop" v-on:click="appSidebarMobileToggled"></button>
 </template>

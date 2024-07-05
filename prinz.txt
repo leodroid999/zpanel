@@ -1,0 +1,26 @@
+Prinz
+
+ftp://z-panel.io
+root / pQd2xCJ8zwr9YMLnKZUhHB
+
+
+SSH 
+z-panel.io
+root / pQd2xCJ8zwr9YMLnKZUhHB
+
+
+
+http://z-panel.io/pm
+vue / TaxsSQL83819
+
+
+
+
+http://z-panel.io:5173/login
+
+jamesbond / jamesbond
+
+
+
+
+/var/log/php_errors.log

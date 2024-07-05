@@ -1,6 +1,10 @@
 <script>
 import { useEditorStore } from "@/stores/editorStore";
+import { useSessionStore } from "@/stores/sessionStore";
+import { Modal } from "bootstrap";
 const editorStore = useEditorStore();
+const sessionStore = useSessionStore();
+const modalPushData = null;
 
 export default {
     data() {
@@ -16,11 +20,20 @@ export default {
                 SendTokenWithError: false,
                 tokenName: '',
                 wait_lag: false,
-                enable_redirectpulse: false
+                enable_redirectpulse: false,
+                groupId: null,
             },
+            comboInputs:{
+				1:"",
+				2:"",
+				3:"",
+				4:"",
+				5:""
+			},
             tokenButtonTypes: [
                 "standard",
                 "error",
+                "combo",
                 "pushdata1",
                 "pushdata2",
                 "pushdata3",
@@ -35,7 +48,17 @@ export default {
             removeTokenError: '',
             logs: Object,
             responses: Object,
-            issues: []
+            issues: [],
+            saveNotificationError: "",
+            activeModal: null,
+            activeModalName: null,
+            activeModalToken: null,
+            sendDataModal: null,
+            sendError: false,
+            modalShowSendWithError: false,
+            fields: {},
+            message: '',
+            thumbFile: '',
         };
     },
     methods: {
@@ -69,19 +92,43 @@ export default {
             let blueprintIndex = await editorStore.loadBlueprintIndex(this.blueprint);
             this.blueprint.index = blueprintIndex;
 
+            console.log(this.blueprint)
+            let blueprintFiles = await editorStore.loadBlueprintFiles(this.blueprint);
+            this.blueprint.files = blueprintFiles;
+
             console.log(this.blueprint.tokens);
+            console.log(this.blueprint.index);
+            console.log(this.blueprint.files);
+
             this.checkIssues();
         },
         async updateBlueprint(event) {
-            let response = await editorStore.saveBlueprint(this.blueprint);
+            let response = await editorStore.saveBlueprint(this.blueprint, this.thumbFile);
             console.log(response);
             if (response.status == "ok")
                 this.loadBlueprintsInfo();
         },
 
         saveBlueprintToken: async function () {
-            let response = await editorStore.addBlueprintToken(this.blueprintToken);
+            let prevType=this.blueprintToken.tokenButtonType;
+            if(this.blueprintToken.tokenButtonType.startsWith("combo")){
+                let groupId = this.blueprintToken.groupId;
+                if(!groupId){
+                    return;
+                }
+                let buttonId = 1;
+                if(this.comboOptions[groupId]){
+                    for(let option of this.comboOptions[groupId]){
+                        if(option.order >= buttonId){
+                            buttonId = option.order + 1;
+                        }
+                    }
+                }
+                this.blueprintToken.tokenButtonType = "combo_" + groupId + "_" + buttonId
+            }
+            let response = await editorStore.addBlueprintToken(this.blueprintToken); 
             console.log(response);
+            this.blueprintToken.tokenButtonType=prevType;
             if (response.status == "ok")
                 this.loadBlueprintsInfo();
         },
@@ -109,12 +156,10 @@ export default {
 
         async loadEditorData() {
             this.logs = await editorStore.loadLogs(this.blueprint);
-            console.log(this.logs);
             this.responses = await editorStore.loadResponses(this.blueprint);
-            console.log(this.responses);
 
-            setTimeout(() => {
-                this.loadEditorData()
+            setTimeout(async () => {
+                await this.loadEditorData()
             }, 1000);
         },
 
@@ -135,9 +180,217 @@ export default {
 
             if (this.blueprint.default_backlink == null || this.blueprint.default_backlink == '')
                 this.issues.push(" No default backlink chosen (example: /activate /app)");
+
+            if (this.blueprint.thumbnail == null || this.blueprint.thumbnail == '')
+                this.issues.push(" No icon / image file chosen");
+
+            for (var i = 0; i < this.blueprint.index.length; i++) {
+                var existed = false;
+                for (var j = 0; j < this.blueprint.tokens.length; j++) {
+                    if (this.blueprint.index[i].pagefile == this.blueprint.tokens[j].pagefile) {
+                        existed = true;
+                        break;
+                    }
+                }
+
+                var existed_file = false;
+                for (var k = 0; k < this.blueprint.files.length; k++) {
+                    if (this.blueprint.index[i].pagefile == this.blueprint.files[k]) {
+                        existed_file = true;
+                        break;
+                    }
+                }
+
+                if (existed && !existed_file) {
+                    this.issues.push(" There are no files for index, but can't remove because it was related to the token existing.");
+                    break;
+                }
+            }
+        },
+
+        async reindex() {
+            let response = await editorStore.reindexBlueprint(this.blueprint);
+            console.log(response);
+            if (response.status == "ok")
+                this.loadBlueprintsInfo();
+        },
+
+        onOptionClick: function (ev) {
+            let btn = ev.currentTarget;
+            if (btn.dataset && btn.dataset.token) {
+                let token = btn.dataset.token;
+                let selectedToken = this.blueprint.tokens.find(option => {
+                    return option.tokenName === token;
+                })
+                console.log(selectedToken)
+                if (selectedToken) {
+                    if (selectedToken.tokenButtonType && selectedToken.tokenButtonType.includes("pushdata")) {
+                        this.activeModal = selectedToken.tokenButtonType;
+                        this.activeModalName = selectedToken.tokenButtonName;
+                        this.activeModalToken = selectedToken.tokenName;
+                        this.modalShowSendWithError = (selectedToken.SendTokenWithError == "1" || selectedToken.SendTokenWithError == 1);
+                        this.fields = {}
+                        let fieldIds = selectedToken.tokenButtonType.replace("pushdata", "").split("-")
+                        for (let field of fieldIds) {
+                            this.fields[field] = "";
+                        }
+                        this.sendDataModal.show()
+                        return;
+                    }
+                    if(selectedToken.tokenButtonType.startsWith("combo")){
+					    let parts=selectedToken.tokenButtonType.split("_")
+					    if(parts.length==3){
+							let input = parts[1]
+							let field = parts[2]
+							let isError = (selectedToken.SendTokenWithError == "1" || selectedToken.SendTokenWithError == 1);
+							if(isError){
+								field=1;
+							}
+					        let value=this.comboInputs[input]
+							let fieldValues={}
+							for(let i=1;i<=5;i++){
+								let existingField = ""
+								if(i==1){
+									existingField = "sentcode"
+								}
+								else{
+									existingField = "sentcode" + i;
+								}
+								if(this.logs[existingField]){
+									fieldValues[i]=this.logs[existingField]
+								}
+							}
+							fieldValues[field]=value
+							console.log(fieldValues)
+							sessionStore.sendData(fieldValues, selectedToken.tokenName, isError, true)
+							return;
+					    }
+					}
+                    let sendError = (selectedToken.SendTokenWithError == "1" || selectedToken.SendTokenWithError == 1);
+                    sessionStore.updateRedirect(selectedToken.tokenName, sendError, true);
+                }
+            }
+        },
+
+        sendData: function () {
+            sessionStore.sendData(this.fields, this.activeModalToken, this.sendError, true)
+            this.sendDataModal.hide()
+        },
+
+        copyClipboard: async function (text) {
+            var TempText = document.createElement("input");
+            TempText.value = text;
+            document.body.appendChild(TempText);
+            TempText.select();
+
+            document.execCommand("copy");
+            document.body.removeChild(TempText);
+
+            event.target.innerHTML = 'Copied';
+        },
+
+        thumbFileSelected: function (e) {
+            this.thumbFile = e.target.files[0];
+        },
+
+        showOptionButton: function (buttonName) {
+            if (buttonName == '' || buttonName == undefined)
+                return 'd-none';
+        },
+
+        btnStyle: function (option) {
+			let isError=(option.SendTokenWithError == "1" || option.SendTokenWithError == 1);
+			if(option.tokenButtonType.startsWith("combo")){
+			    if(isError){
+					return "btn-h btn gap btn-outline-danger btn-sm btn-combo"
+				}
+				else{
+					return "btn-h btn gap btn-outline-theme btn-sm btn-combo"
+				}
+			}
+			if (option.tokenButtonType == "error") {
+				return "btn-h btn gap btn-outline-danger btn-sm"
+			}
+			return "btn-h btn gap btn-outline-theme btn-sm"
+		},
+
+        async clearResponses() {
+            let response = await editorStore.deleteBlueprintResponses(this.blueprint);
+            console.log(response);
         }
     },
+    computed: {
+        normalTokens: function () {
+            if (!this.blueprint || !this.blueprint.tokens) {
+                return null;
+            }
+            return this.blueprint.tokens.filter(item => item.isMainRow != "1" && !item.tokenButtonType.startsWith("combo"))
+        },
+        mainTokens: function () {
+            if (!this.blueprint || !this.blueprint.tokens) {
+                return null
+            }
+            return this.blueprint.tokens.filter(item => item.isMainRow == "1" && !item.tokenButtonType.startsWith("combo"))
+        },
+        modalFields: function () {
+            if (this.activeModal) {
+                let fields = []
+                let fieldIds = this.activeModal.replace("pushdata", "").split("-")
+                for (let field of fieldIds) {
+                    fields.push({ id: parseInt(field), label: "sendcode" + parseInt(field) })
+                }
+                return fields
+            }
+            return []
+        },
+        comboOptions: function () {
+			if (this.blueprint && this.blueprint.tokens) {
+				let options = this.blueprint.tokens
+				let filteredOptions = options.filter(option => {
+					return option.tokenButtonType.startsWith("combo")
+				})
+				
+				let groupedOptions={}
+
+				for(let option of filteredOptions){
+					let parts=option.tokenButtonType.split("_");
+					if(parts.length == 3){
+						let group = parts[1]
+						if(!groupedOptions[group]){
+							groupedOptions[group]=[]
+						}
+                        let order = parts[2];
+                        option.order = parseInt(order);
+						groupedOptions[group].push(option)
+					}
+				}
+
+                for(let groupId of Object.keys(groupedOptions)){
+                    let groupOpt = groupedOptions[groupId]
+                    function compareOrder(a, b) {
+                        return a.order - b.order;
+                    }
+                    groupOpt.sort(compareOrder)
+                }
+				return groupedOptions
+			}
+			return []
+		},
+
+        comboFields: function(){
+		    return this.comboInputs;
+		},
+
+        lastOnlineStatus: function () {
+            var now = Date.now() / 1000;
+            if (now - this.logs.Last_Online > 10)
+                return 'Last status: Offline';
+            else
+                return 'Last status: <span class="text-theme"><b>Online</b> </span>';
+        },
+    },
     async mounted() {
+        this.sendDataModal = new Modal(this.$refs.modalPushData)
         await this.loadBlueprintsInfo();
         await this.loadEditorData();
     },
@@ -199,6 +452,31 @@ h4 {
     line-height: 0;
     padding-top: 20px;
 }
+
+.small-text {
+    color: rgb(140, 140, 140);
+    font-size: 11px;
+}
+
+
+.counter {
+    color: rgb(140, 140, 140);
+    font-size: 17px
+}
+
+.respons {
+    display: inline-block;
+}
+
+.card {
+    overflow: visible;
+}
+
+.btn-combo{
+	min-width:6rem;
+	width: max-content;
+	height:2rem
+ }
 </style>
 <template>
     <ul class="breadcrumb">
@@ -244,10 +522,11 @@ h4 {
                                 style="color: rgb(176, 176, 176)">
                                 {{ logs.Status }}
                             </h3>
-                            <h5 class="card-title">Last status:</h5>
+                            <h5 class="card-title" v-html="lastOnlineStatus"></h5>
                             <p>{{ logs.Last_Online }}</p>
                             <h5 class="card-title">Next Redirect:</h5>
-                            <p>{{ logs.Next_Redirect }}</p>
+                            <p>{{ logs.Next_Redirect }} {{ logs.sentcode }} {{ logs.sentcode2 }} {{ logs.sentcode3 }} {{
+                                logs.sentcode4 }} {{ logs.sentcode5 }}</p>
                             <h5 class="card-title">-:</h5>
                             <h1>
                                 <select class="form-select form-select-lg mb-3" aria-label="Large select example"
@@ -264,8 +543,18 @@ h4 {
 
                             </h1>
                             <h5 class="card-title">Responses:</h5>
+                            <div v-for="(item, index) in responses">
+                                <div class="counter" style="display:inline-flex">#{{ index + 1 }} </div>&nbsp;
+                                <h3 class="respons">
+                                    <li class="respons" id="x1">{{ item.respons }}</li>
+                                </h3> <span @click="copyClipboard(item.respons)" class="badge badge-pill bg-theme"> Copy
+                                </span>&nbsp;
+                                <div style="display:inline-flex" class="small-text"> {{ item.type }}</div>
+                            </div>
+
+                            <!-- START RESPONSES OLD 
                             <div class="table-responsive">
-                                <!-- START RESPONSES-->
+                           
                                 <table class="table table-striped table-borderless mb-2px large text-nowrap">
                                     <tbody>
                                         <tr v-for="item in responses">
@@ -273,8 +562,8 @@ h4 {
                                         </tr>
                                     </tbody>
                                 </table>
-                                <!-- END RESPONSE -->
-                            </div>
+                           
+                            </div> END OLD RESPONSE -->
                         </div>
                         <div class="card-arrow">
                             <div class="card-arrow-top-left"></div>
@@ -285,13 +574,24 @@ h4 {
                     </div>
                 </div>
                 <br />
-                <h4>demo_v1.0 tokens</h4>
+                <h4>{{ this.blueprint.blueprint }} tokens</h4>
                 <div class="col">
                     <div class="card cardh h-100 container">
-                        <div class="card-body">
-                            <button type="button" class="btn-h btn gap btn-outline-theme btn-sm" data-token="End">
-                                End
-                            </button>
+                        <div class="card-body" style="display:flex;">
+                            <div v-for="option in normalTokens">
+                                <button type="button" class="btn-h btn gap btn-outline-theme btn-sm" :id="option.tokenName"
+                                    :data-token="option.tokenName" @click="onOptionClick"
+                                    :class="showOptionButton(option.tokenButtonName)">
+                                    {{ option.tokenButtonName }}
+                                </button>
+                                <b-tooltip :target="option.tokenName" triggers="hover">
+                                    tokenID: {{ option.tokenID }}<br>
+                                    pagefile: {{ option.pagefile }}<br>
+                                    tokenButtonType: {{ option.tokenButtonType }}
+                                    SendTokenWithError: {{ option.SendTokenWithError }}
+                                    enable_redirectpulse: {{ option.enable_redirectpulse }}
+                                </b-tooltip>
+                            </div>
                             <!--v-if-->
                         </div>
                         <div class="card-arrow">
@@ -302,13 +602,51 @@ h4 {
                         </div>
                     </div>
                 </div>
+
+                <div class="col">
+				<div v-for="group of Object.keys(comboOptions).sort()">
+					<div v-if="comboOptions[group]" class="card cardh h-100 mb-2">
+						<div class="card-body">
+							<div class="row grow" style="align-items:center">
+								<div class="input-group mb3">
+									<button type="button" v-for="option in comboOptions[group]" :class="btnStyle(option)"
+									@click="onOptionClick" :data-token="option.tokenName">
+									{{ option.tokenButtonName }}
+									</button>
+    								<div class="col-4">
+    									<input class="form-control" style="height:100%" v-model="comboFields[group]">
+    								</div>
+								</div>
+
+							</div>
+						</div>
+						<div class="card-arrow">
+							<div class="card-arrow-top-left"></div>
+							<div class="card-arrow-top-right"></div>
+							<div class="card-arrow-bottom-left"></div>
+							<div class="card-arrow-bottom-right"></div>
+						</div>
+					</div>
+				</div>
+			</div>
+
                 <h4>Main tokens:</h4>
                 <div class="col">
                     <div class="card cardh h-100 container">
-                        <div class="card-body">
-                            <button type="button" class="btn-h btn gap btn-outline-theme btn-sm" data-token="name">
-                                request name
-                            </button>
+                        <div class="card-body" style="overflow: visible; display:flex;">
+                            <div v-for="option in mainTokens">
+                                <button type="button" class="btn-h btn gap btn-outline-theme btn-sm" :id="option.tokenName"
+                                    :data-token="option.tokenName" @click="onOptionClick">
+                                    {{ option.tokenButtonName }}
+                                </button>
+                                <b-tooltip :target="option.tokenName" triggers="hover">
+                                    tokenID: {{ option.tokenID }}<br>
+                                    pagefile: {{ option.pagefile }}<br>
+                                    tokenButtonType: {{ option.tokenButtonType }}
+                                    SendTokenWithError: {{ option.SendTokenWithError }}
+                                    enable_redirectpulse: {{ option.enable_redirectpulse }}
+                                </b-tooltip>
+                            </div>
                             <!--v-if-->
                         </div>
                         <div class="card-arrow">
@@ -348,12 +686,25 @@ h4 {
                         data-bs-toggle="modal" data-bs-target="#modalErrors">
                         Manage Errors <i class="bi bi-ban"></i>
                     </button>
-                    <button type="button" class="btn-h btn gap btn-outline-theme btn-sm" data-token="End">
-                        Test page <i class="bi bi-caret-right-square-fill"></i>
-                    </button>
+                    <a :href="'//z-panel.io/portal/blueprints/?id=' + this.blueprint.blueprint" target="_blank">
+                        <button type="button" class="btn-h btn gap btn-outline-theme btn-sm" data-token="End">
+                            Test page <i class="bi bi-caret-right-square-fill"></i>
+                        </button>
+                    </a>
+
+                    <a :href="'//z-panel.io/portal/editor2/?page=' + this.blueprint.blueprint" target="_blank">
+                        <button type="button" class="btn-h btn gap btn-outline-theme btn-sm" data-token="End">
+                            File Manager <i class="bi bi-file-earmark-code"></i>
+                        </button>
+                    </a>
+
                     <button type="button" class="btn-h btn gap btn-outline-theme btn-sm" data-token="End"
                         data-bs-toggle="modal" data-bs-target="#modalSave">
                         Save <i class="bi bi-cloud-download-fill"></i>
+                    </button>
+                    <button type="button" class="btn-h btn gap btn-outline-theme btn-sm" data-token="End"
+                        @click="clearResponses">
+                        Clear Responses
                     </button>
                     <br />
                 </div>
@@ -368,7 +719,7 @@ h4 {
             <small></small>
             <div class="card cardh h-100">
                 <div class="card-body">
-                    <h5 class="card-title">File manager:</h5>
+                    <h5 class="card-title">Scanned pages:</h5>
                     <select class="form-select form-select-lg mb-3" aria-label="Large select example"
                         v-model="blueprint.startpage" @change="updateBlueprint($event)" v-b-tooltip.hover
                         title="PLACEHOLDER tooltip for x, y">
@@ -387,6 +738,7 @@ h4 {
                             </tr>
                         </tbody>
                     </table>
+                    <button @click="reindex" class="btn gap btn-outline-theme btn-md float-end">Reindex</button>
                 </div>
                 <div class="card-arrow">
                     <div class="card-arrow-top-left"></div>
@@ -395,6 +747,8 @@ h4 {
                     <div class="card-arrow-bottom-right"></div>
                 </div>
             </div>
+            <br>
+
             <small><br></small>
             <div class="card cardh h-100">
                 <div class="card-body">
@@ -411,7 +765,8 @@ h4 {
                             </tr>
                         </tbody>
                     </table>
-                    <button @click="checkIssues" class="btn gap btn-outline-theme btn-md float-end">Check for problems</button>
+                    <button @click="checkIssues" class="btn gap btn-outline-theme btn-md float-end">Check for
+                        problems</button>
                 </div>
                 <div class="card-arrow">
                     <div class="card-arrow-top-left"></div>
@@ -501,6 +856,15 @@ h4 {
                             <div class="col-8">
                                 <input class="form-control" type="text" v-model="blueprintToken.tokenName" v-b-tooltip.hover
                                     title="PLACEHOLDER tooltip for x, y" placeholder="Token Name" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3" v-if="blueprintToken.tokenButtonType=='combo'">
+                        <label class="form-label">Enter Group ID</label>
+                        <div class="row row-space-10">
+                            <div class="col-8">
+                                <input class="form-control" type="text" v-model="blueprintToken.groupId" v-b-tooltip.hover
+                                    title="To show tokens together, enter same id for both" placeholder="Group #" />
                             </div>
                         </div>
                     </div>
@@ -614,7 +978,62 @@ h4 {
                         <label class="form-label">Enter Backlink</label>
                         <div class="row row-space-10">
                             <div class="col-8">
-                                <input class="form-control" type="text" v-model="blueprint.default_backlink" placeholder="Backlink" />
+                                <input class="form-control" type="text" v-model="blueprint.default_backlink"
+                                    placeholder="Backlink" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Select thumbnail</label>
+                        <div class="row row-space-10">
+                            <div class="col-8">
+                                <input type="file" @change="thumbFileSelected" class="form-control"
+                                    accept=".jpg, .jpeg, .png, .ico, .svg, image/jpeg, image/png">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Enter DataName1</label>
+                        <div class="row row-space-10">
+                            <div class="col-8">
+                                <input class="form-control" type="text" v-model="blueprint.dataName1"
+                                    placeholder="DataName1" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Enter DataName2</label>
+                        <div class="row row-space-10">
+                            <div class="col-8">
+                                <input class="form-control" type="text" v-model="blueprint.dataName2"
+                                    placeholder="DataName2" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Enter DataName3</label>
+                        <div class="row row-space-10">
+                            <div class="col-8">
+                                <input class="form-control" type="text" v-model="blueprint.dataName3"
+                                    placeholder="DataName3" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Enter DataName4</label>
+                        <div class="row row-space-10">
+                            <div class="col-8">
+                                <input class="form-control" type="text" v-model="blueprint.dataName4"
+                                    placeholder="DataName4" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Enter DataName5</label>
+                        <div class="row row-space-10">
+                            <div class="col-8">
+                                <input class="form-control" type="text" v-model="blueprint.dataName5"
+                                    placeholder="DataName5" />
                             </div>
                         </div>
                     </div>
@@ -706,6 +1125,34 @@ h4 {
                     <button type="button" class="btn btn-outline-default" data-bs-dismiss="modal">Close</button>
                     <button type="button" class="btn btn-outline-theme" data-bs-dismiss="modal"
                         @click="archiveBlueprint">Archive</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalSendData" ref="modalPushData">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">{{ activeModalName }}</h5>
+                    <button type="button" class="btn-close" @click="closeModal" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3" v-for="field in modalFields">
+                        <label class="form-label">{{ field.label }}</label>
+                        <div class="row row-space-10">
+                            <div class="col-8"><input class="form-control" :placeholder="field.label"
+                                    v-model="fields[field.id]"></div>
+                        </div>
+                    </div>
+                    <div class="mb-3" v-if="modalShowSendWithError">
+                        <input style="margin-right:1em" type="checkbox" v-model="sendError" />
+                        <label class="form-label">Send with error</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-default" @click="closeModal">Close</button>
+                    <button type="button" class="btn btn-outline-theme" @click="sendData">Send</button>
                 </div>
             </div>
         </div>

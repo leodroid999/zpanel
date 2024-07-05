@@ -45,6 +45,13 @@ export default {
 			let response = await editorStore.deleteBlueprint(blueprint);
 			console.log(response);
 			this.loadBlueprintsInfo();
+		},
+		onTokenSelected: async function(ev){
+
+		},
+
+		thumnailPath(blueprint){
+			return "//z-panel.io/portal/assets/icons/" + blueprint.thumbnail;
 		}
 	},
 	computed: {
@@ -74,12 +81,13 @@ export default {
 	</h1>
 	<div class="list-group mb-3">
 		<div class="list-group-item d-flex align-items-center" v-for="blueprint in blueprints">
-			<div
-				class="w-40px h-40px d-flex align-items-center justify-content-center bg-gradient-blue-cyan text-white rounded-2 ms-n1">
+			
+			<img :src="thumnailPath(blueprint)" class="w-40px h-40px d-flex align-items-center justify-content-center bg-gradient-blue-cyan text-white rounded-2 ms-n1" v-if="blueprint.thumbnail">
+			<div class="w-40px h-40px d-flex align-items-center justify-content-center bg-gradient-blue-cyan text-white rounded-2 ms-n1" v-else>
 				{{ blueprint.blueprint[0] }}
 			</div>
 			<div class="flex-fill px-3">
-				<div class="fw-bold">{{ blueprint.blueprint }}</div>
+				<div class="fw-bold"><a :href="url(blueprint, 'View')" style="text-decoration: none;"> {{ blueprint.blueprint }}</a></div>
 				<div class="small text-inverse text-opacity-50">{{ blueprint.assetDir }} {{ blueprint.engine }}</div>
 			</div>
 			<div class="dropdown">

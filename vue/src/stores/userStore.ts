@@ -21,6 +21,7 @@ export const useUserStore = defineStore({
         notificationsSeen: new Set(),
         memo: "",
         themeClass : "",
+        appSetting: false,
     }
   },
   actions:{
@@ -141,6 +142,7 @@ export const useUserStore = defineStore({
             this.user=responseData.user;
             this.memo=atob(responseData.user.memo);
             this.themeClass=responseData.user.themeColor;
+            this.appSetting = responseData.user.appSetting;
           }
           return responseData;
         }
@@ -168,12 +170,12 @@ export const useUserStore = defineStore({
     },
     
     async saveUserInfo(currentPassword,updatedInfo){
-      if(!currentPassword){
-        return;
-      }
+      // if(!currentPassword){
+      //   return;
+      // }
       let data=new FormData();
       data.append('currentPassword',currentPassword)
-      let fields=['username','newPassword','chatID','telegram','referal', 'webNotifs']
+      let fields=['username','newPassword','chatID','telegram','referal', 'webNotifs', 'appSetting']
       for(let field of fields){
           if(updatedInfo[field] && updatedInfo[field]!=""){
               data.append(field,updatedInfo[field])

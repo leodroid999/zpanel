@@ -5,7 +5,6 @@
 .app-sidebar {
 	width: $app-sidebar-width;
 	bottom: 0;
-	position: fixed;
 	top: $app-header-height;
 	z-index: $app-sidebar-zindex;
 	
@@ -19,7 +18,7 @@
 		top: 0;
 		z-index: $app-sidebar-mobile-zindex;
 		background: $app-sidebar-mobile-bg;
-		
+		width:100%;
 		@if $enable-rtl {
 			right: -$app-sidebar-width;
 		} @else {

@@ -26,6 +26,8 @@ export default {
 			saveChatIDError: null,
 			saveNotificationError: null,
 			saveThemecolorError : null,
+			newAppSetting : "",
+			saveAppSettingError : '',
 
 			themeList: [
 				{ name: 'Pink', bgClass: 'bg-pink', themeClass: 'theme-pink' },
@@ -146,7 +148,19 @@ export default {
 			if (result && result.message) {
 				this.saveNotificationError = result.message
 			}
-		}
+		},
+		saveAppSettings: async function () {
+			let updatedInfo = {
+				appSetting: this.newAppSetting ? 'true' : 'false'
+			}
+			let result = await userStore.saveUserInfo(this.currentPassword, updatedInfo)
+			if (!result || (result.status != "ok" && !result.message)) {
+				this.saveAppSettingError = "There was an error, try again"
+			}
+			if (result && result.message) {
+				this.saveAppSettingError = result.message
+			}
+		},
 	},
 	computed: {
 		user: function () {
@@ -285,6 +299,47 @@ export default {
 					<!-- END #notifications -->
 
 
+					<!-- BEGIN #AppSettings -->
+					<div id="appSettings" class="mb-5">
+						<h4><i class="bi bi-gear fa-fw text-theme"></i> App Settings</h4>
+						<p>Enable or disable App Settings.</p>
+						<card>
+							<div v-if="user" class="list-group list-group-flush">
+
+								<div class="list-group-item d-flex align-items-center">
+									<div class="flex-1 text-break">
+										<div>App Settings</div>
+										<div class="text-inverse text-opacity-50 d-flex align-items-center">
+											<div v-if="user">
+												<div v-if="user.appSetting">
+													<i class="fa fa-circle fs-8px fa-fw text-success me-1"></i>
+													<span>Enabled</span>
+												</div>
+												<div v-else>
+													<i class="fa fa-circle fs-8px fa-fw text-error me-1"></i>
+													<span>Disabled</span>
+												</div>
+											</div>
+										</div>
+									</div>
+									<div>
+										<a href="#modalEditAppSetting" data-bs-toggle="modal"
+											class="btn btn-outline-default w-100px">Edit</a>
+									</div>
+								</div>
+							</div>
+							<div v-else class="list-group list-group-flush">
+								<div class="list-group-item d-flex align-items-center">
+									<div class="flex-1 text-break">
+										<div>Loading ...</div>
+									</div>
+								</div>
+							</div>
+						</card>
+					</div>
+					<!-- END #AppSetting -->
+
+
 					<div id="theme_color" class="mb-5">
 						<h4><i class="fa-solid fa-palette fa-fw text-theme"></i> Theme Color</h4>
 						<p>Change theme color.</p>
@@ -317,6 +372,7 @@ export default {
 						<nav class="nav">
 							<nav-scroll-to target="#general" data-toggle="scroll-to">General</nav-scroll-to>
 							<nav-scroll-to target="#notifications" data-toggle="scroll-to">Notifications</nav-scroll-to>
+							<nav-scroll-to target="#appSettings" data-toggle="scroll-to">App Settings</nav-scroll-to>
 							<nav-scroll-to target="#theme_color" data-toggle="scroll-to">Theme Colors</nav-scroll-to>
 						</nav>
 					</nav>
@@ -549,6 +605,53 @@ export default {
 					<div class="modal-footer">
 						<button type="button" class="btn btn-outline-default" data-bs-dismiss="modal">Close</button>
 						<button type="button" class="btn btn-outline-theme" @click="saveNotification">Save changes</button>
+					</div>
+				</div>
+			</div>
+		</div>
+
+
+		<div class="modal fade" id="modalEditAppSetting">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title">App Setting</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+					</div>
+					<div class="modal-body">
+						<div class="mb-3">
+							<label class="form-label">App Settings</label>
+							<div class="row row-space-10">
+								<div class="col-8">
+									<div class="form-check">
+										<input class="form-check-input" type="checkbox" v-model="newAppSetting"
+											id="defaultCheckAppSetting">
+										<label class="form-check-label" for="defaultCheckAppSetting">Enable App Setting</label>
+									</div>
+								</div>
+							</div>
+							<div class="alert bg-inverse bg-opacity-10 border-0">
+								Check if you want to configure App Setting.
+							</div>
+							<!-- <div class="mb-3">
+								<label class="form-label">Enter password</label>
+								<div class="row row-space-10">
+									<div class="col-8">
+										<input class="form-control" type="password" @input="resetPwError"
+											v-model="currentPassword" placeholder="password" />
+									</div>
+								</div>
+							</div> -->
+							<div class="text-center text-error">
+								<div v-if="saveAppSettingError" class="alert alert-warning">
+									<span v-if="saveAppSettingError">{{ saveAppSettingError }}</span>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-outline-default" data-bs-dismiss="modal">Close</button>
+						<button type="button" class="btn btn-outline-theme" @click="saveAppSettings">Save changes</button>
 					</div>
 				</div>
 			</div>

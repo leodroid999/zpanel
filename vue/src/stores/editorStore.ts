@@ -117,21 +117,52 @@ export const useEditorStore = defineStore({
 
     },
 
-    async loadBlueprintTokens(blueprint){
 
-      this.blueprint = blueprint;
-
+    // Delete Blueprint Responses
+    async deleteBlueprintResponses(blueprint){
       let data=new FormData();
       data.append('blueprint_name', blueprint.blueprint);
-
+      
       let options={
         method:"POST",
         body: data,
         credentials: 'include'
       }
+      try{
+        let response=await fetch(SERVER+'/portal/deleteBlueprintResponses.php', options);
+        if(response.ok){
+          let responseData=await response.json();
+          console.log(responseData);
+          return responseData;
+        }
+        else{
+          return {
+            error:"SERVER_ERROR",
+            message:"There was a error processing your request , try again later"
+          }
+        }
+      }
+      catch(err){
+        console.error(err);
+        return {
+          error:"SERVER_ERROR",
+          message:"There was a error processing your request , try again later"
+        }
+      }
+
+    },
+
+    async loadBlueprintTokens(blueprint){
+
+      this.blueprint = blueprint;
+
+      let options={
+        method:"GET",
+        credentials: 'include'
+      }
       
       try{
-        let response=await fetch(SERVER+'/portal/blueprintTokens.php',options);
+        let response=await fetch(SERVER+"/portal/blueprintTokens.php?blueprint_name="+blueprint.blueprint,options);
         if(response.ok){
           let responseData=await response.json()
           if(responseData.status=="ok"){
@@ -139,6 +170,46 @@ export const useEditorStore = defineStore({
             console.log(responseData.blueprintTokens);
           }
           return responseData.blueprintTokens;
+        }
+        else{
+          if(response.status==401){
+            this.authenticated=false;
+            return {
+              error:"NOT_AUTHENTICATED",
+              message:"Your session expired, login again"
+            }
+          }
+          return {
+            error:"SERVER_ERROR",
+            message:"There was a error loading your info , try again later"
+          }
+        }
+      }
+      catch(err){
+        console.error(err);
+        return {
+          error:"SERVER_ERROR",
+          message:"There was a error processing your request , try again later"
+        }
+      }
+    },
+
+    async loadBlueprintFiles(blueprint){
+
+      this.blueprint = blueprint;
+      let options={
+        method:"GET",
+        credentials: 'include'
+      }
+      
+      try{
+        let response=await fetch(SERVER+'/portal/blueprintFiles.php?blueprint_name='+blueprint.blueprint,options);
+        if(response.ok){
+          let responseData=await response.json()
+          if(responseData.status=="ok"){
+            console.log(responseData.blueprintFiles);
+            return responseData.blueprintFiles;
+          }
         }
         else{
           if(response.status==401){
@@ -251,10 +322,14 @@ export const useEditorStore = defineStore({
       }
     },
 
-    async saveBlueprint(blueprint){
+    async saveBlueprint(blueprint, thumbFile){
       let data=new FormData();
       data.append('blueprint', JSON.stringify(blueprint));
       
+      if(thumbFile){
+        data.append('thumbnail', thumbFile);
+      }
+
       let options={
         method:"POST",
         body: data,
@@ -283,6 +358,40 @@ export const useEditorStore = defineStore({
       }
 
     },
+    
+    async reindexBlueprint(blueprint){
+      let data=new FormData();
+      data.append('blueprint_name', blueprint.blueprint);
+      
+      let options={
+        method:"POST",
+        body: data,
+        credentials: 'include'
+      }
+      try{
+        let response=await fetch(SERVER+'/portal/reindexBlueprint.php', options);
+        if(response.ok){
+          let responseData=await response.json();
+          console.log(responseData);
+          return responseData;
+        }
+        else{
+          return {
+            error:"SERVER_ERROR",
+            message:"There was a error processing your request , try again later"
+          }
+        }
+      }
+      catch(err){
+        console.error(err);
+        return {
+          error:"SERVER_ERROR",
+          message:"There was a error processing your request , try again later"
+        }
+      }
+
+    },
+
 
     async addBlueprintToken(token){
       let data=new FormData();

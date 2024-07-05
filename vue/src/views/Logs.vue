@@ -21,7 +21,6 @@
         ScrollSpy
     } from 'bootstrap';
 
-    const appVariable = useAppVariableStore();
     const sessionStore = useSessionStore();
     const appOption = useAppOptionStore();
 
@@ -53,13 +52,12 @@
                     {
                         label: "Status",
                         field: "Last_Online",
-                        width: "6%",
                         sortable: true,
                     },
                     {
                         label: "Panel - Page",
                         field: "panelIDPage",
-                        width: "4%",
+                        width: "15%",
                         sortable: true,
                         display: function(row) {
                             return row.panelId+" - "+row.pageID
@@ -68,12 +66,11 @@
                     {
                         label: "Actions",
                         field: "actions",
-                        width: "3%",
                     },
                     {
                         label: "Info",
                         field: "Info",
-                        width: "5%",
+                        width: "20%",
                         sortable: true,
                         display: function (row) {
                             let osIcon = "?"
@@ -108,7 +105,7 @@
                     {
                         label: "Input",
                         field: "Input",
-                        width: "5%",
+                        width: "10%",
                         display: function (row) {
                             let input = "";
                             if (row.username) {
@@ -129,7 +126,12 @@
                     {
                         label: "Next Redirect",
                         field: "Next_Redirect",
-                        width: "5%",
+                        sortable: true,
+                    },
+                    {
+                        label: "Memo",
+                        field: "memo",
+                        width: "15%",
                         sortable: true,
                     },
                 ],
@@ -286,7 +288,11 @@
                 selectedPanel: "ALL",
                 updateLogTimeout: null,
                 currentTablePage: 1,
-                selectedFilter: null
+                selectedFilter: null,
+                selectedLogMemo: null,
+                initialMemoContent: null,
+                memoSaveStatus: null,
+                memoLastSavedId: null,
             }
         },
         components: {
@@ -393,6 +399,32 @@
                     this.selectedFilter = filtername
                     sessionStore.setFilter(filtername)
                 }
+            },
+            editMemo: function(session){
+                session.editMemo=true;
+                this.selectedLogMemo=session
+                this.memoSaveStatus=null
+                this.initialMemoContent=`${session.memo}`
+            },
+            saveMemo: async function(e){
+                let content=e.currentTarget.parentNode.parentNode.children[0].value;
+                if(content){
+                    let result=await sessionStore.updateMemo(this.selectedLogMemo,content)
+                    if (result.status == "ok") {
+                        this.memoSaveStatus="Saved."
+                        this.memoLastSavedId=this.selectedLogMemo.SessionID
+                    }
+                    else{
+                         this.memoSaveStatus="Save Failed."
+                        this.memoLastSavedId=this.selectedLogMemo.SessionID
+                    }
+                }
+                this.initialMemoContent=null;
+                this.selectedLogMemo=null;
+            },
+            closeMemo: function(e){
+                this.initialMemoContent=null;
+                this.selectedLogMemo=null;
             }
         },
         computed: {
@@ -408,7 +440,7 @@
         },
         mounted() {
             console.log("mounted");
-            //appOption.appSidebarCollapsed = true;
+            appOption.appSidebarCollapsed = true;
             sessionStore.currentFilter = null;
             sessionStore.selectedPanelName = "ALL"
             this.loadPanelList()
@@ -450,6 +482,26 @@
             border: 2px solid grey;
             color: white;
         }
+        .memotext {
+            background-color:rgb(0,0,0,0.3);
+            color:white;
+            resize:none;
+            flex-grow:1;
+            margin-right: 0.5em;
+        }
+        .memotext::-webkit-scrollbar{
+            width:1em;
+            background-color:rgba(37, 37, 37, 0.7)
+        }
+        textarea::-webkit-scrollbar-thumb {
+            background-color: rgb(75, 73, 73);
+            width: 0.7em;
+            border-radius: 5px;
+          }
+        .memotext::-webkit-scrollbar-button { 
+            display:none;
+        }
+       
     </style>
     <template>
         <ul class="breadcrumb">
@@ -513,23 +565,32 @@
                             </router-link>
                         </div>
                     </template>
-                    <template v-slot:pageID="data">
-                        <router-link :to="'/s/'+data.value.SessionID">
-                            <button type="button" class="w-100 btn btn-outline-theme btn-sm">
-                                {{data.value.SessionID}}
-                            </button>
-                        </router-link>
-                    </template>
                     <template v-slot:Last_Online="data">
                         <div class="row">
-                            <span style="width:max-content" v-if="isOnline(data.value.Last_Online)" class='text-theme'>
+                            <span v-if="isOnline(data.value.Last_Online)" class='text-theme'>
                                 <b>Online</b>
                             </span>
-                            <span style="width:max-content" v-else>
+                            <span v-else>
                                 <b>Offline, </b>{{timeAgo(data.value.Last_Online)}}     
                             </span>
                            <b-spinner v-if="isOnline(data.value.Last_Online)" small type="grow"  variant="theme" label="Loading..."></b-spinner>    
                         </div>           
+                    </template>
+                    <template v-slot:memo="data">
+                        <div v-if="this.selectedLogMemo && this.selectedLogMemo.SessionID==data.value.SessionID" 
+                        style="display:flex; flex-direction:row; padding:0.5em; flex-wrap:nowrap; align-items:center;">
+                           <textarea class="memotext" v-model="this.initialMemoContent"></textarea>
+                           <div style="display:flex; flex-direction:column;">
+                            <i class="bi bi-check-circle-fill" v-on:click="saveMemo" style="color: var(--bs-theme); font-size:1.2em"></i> 
+                            <i class="bi bi-x-circle" v-on:click="closeMemo" style="color: var(--bs-theme);  font-size:1.2em"></i> 
+                           </div>
+                        </div>  
+                        <div  v-else style="display:flex; flex-direction:row; padding:0.5em; flex-wrap:nowrap; align-items:center">
+                           {{data.value.memo}}
+                            <i class="bi bi-pencil-square" v-on:click="editMemo(data.value)" :data-sessionid="data.value.SessionID" 
+                            style="color: var(--bs-theme); font-size:1.3em; margin: 0 0.5em 0 0.5em;"></i>
+                            <span v-if="this.memoLastSavedId==data.value.SessionID">{{this.memoSaveStatus}}</span>
+                         </div>         
                     </template>
                 </vue-table-lite>
             </card-body>

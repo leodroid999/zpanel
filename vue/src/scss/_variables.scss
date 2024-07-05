@@ -199,7 +199,7 @@ $app-header-padding-y:                    $spacer * .25 !default;
 
 // 10. App - Sidebar settings
 
-$app-sidebar-width:                       rem(270px) !default;
+$app-sidebar-width:                       max-content !default;
 $app-sidebar-zindex:                      $app-header-zindex - 10 !default;
 $app-sidebar-mobile-zindex:               $app-header-zindex + 10 !default;
 $app-sidebar-mobile-bg:                   rgba(38, 51, 66, .95) !default;

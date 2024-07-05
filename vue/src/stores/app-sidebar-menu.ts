@@ -25,12 +25,12 @@ let baseMenu = [
   {
     text: "Components",
     is_header: true,
-  },
+  }/*,
   {
     url: "/memo",
     icon: "bi bi-sticky",
     text: "Memo",
-  },
+  }*/,
   {
     url: "/sites",
     icon: "bi bi-hdd",
@@ -41,7 +41,7 @@ let baseMenu = [
     icon: "bi bi-hdd-network",
     text: "My Panels",
   },
-
+  /*
   {
     icon: "bi bi-shop",
     text: "Shop",
@@ -73,6 +73,7 @@ let baseMenu = [
       },
     ],
   },
+  */
   {
     is_divider: true,
   },
@@ -80,16 +81,18 @@ let baseMenu = [
     text: "Users",
     is_header: true,
   },
+/*
   {
     url: "/wallet",
     icon: "bi bi-wallet",
     text: "Wallet",
-  },
+  }, 
   {
     url: "/order",
     icon: "fas fa-shopping-cart",
     text: "Order",
   },
+  */
   /* {
       'url': '/info', 
       'icon': 'bi bi-info-lg',
@@ -115,12 +118,14 @@ const adminOptions = [
     url: "/editor",
     icon: "bi bi-code-slash",
     text: "Editor",
-  },
+  }/*,
+  
   {
     url: "/collaps",
     icon: "bi bi-circle",
     text: "collaps",
   },
+  */
 ];
 
 const shortlinkOptions = [

@@ -8,11 +8,15 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     Apexcharts: typeof import('./src/components/plugins/Apexcharts.vue')['default']
+    BCol: typeof import('bootstrap-vue-next')['BCol']
+    BContainer: typeof import('bootstrap-vue-next')['BContainer']
     BFormGroup: typeof import('bootstrap-vue-next')['BFormGroup']
     BFormSelect: typeof import('bootstrap-vue-next')['BFormSelect']
     BFormTag: typeof import('bootstrap-vue-next')['BFormTag']
     BFormTags: typeof import('bootstrap-vue-next')['BFormTags']
+    BRow: typeof import('bootstrap-vue-next')['BRow']
     BSpinner: typeof import('bootstrap-vue-next')['BSpinner']
+    BTooltip: typeof import('bootstrap-vue-next')['BTooltip']
     Card: typeof import('./src/components/bootstrap/Card.vue')['default']
     CardBody: typeof import('./src/components/bootstrap/CardBody.vue')['default']
     CardExpandToggler: typeof import('./src/components/bootstrap/CardExpandToggler.vue')['default']
@@ -36,5 +40,8 @@ declare module 'vue' {
     Typeahead: typeof import('./src/components/plugins/Typeahead.vue')['default']
     VueSelect: typeof import('./src/components/plugins/VueSelect.vue')['default']
     VueTable: typeof import('./src/components/plugins/VueTable.vue')['default']
+  }
+  export interface ComponentCustomProperties {
+    vBTooltip: typeof import('bootstrap-vue-next')['vBTooltip']
   }
 }

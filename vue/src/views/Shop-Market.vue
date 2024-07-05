@@ -23,13 +23,13 @@ export default {
             searchType: '',
             countries: ['NL', 'BE', 'FR', 'USA', 'DE', 'IT', 'AT'],
             searchCountries: [],
-            selectedType : ""
+            selectedType: ""
         }
     },
     methods: {
         setTags(type) {
             this.searchType = type;
-            if (type != undefined)
+            if (type != undefined && type != 'all')
                 this.searchTags = [type];
             else
                 this.searchTags = [];
@@ -223,14 +223,15 @@ h5 {
     </ul>
 
     <ul class="nav nav-tabs nav-tabs-v2">
-        <li class="nav-item me-4"><a href="#home" class="nav-link" :class="selectedType == undefined ? 'active' : ''" data-bs-toggle="tab"
-                @click="setTags('all')">All</a></li>
-        <li class="nav-item me-4"><a href="#profile" class="nav-link" :class="selectedType == 'leads'? 'active' : ''" data-bs-toggle="tab"
-                @click="setTags('leads')">Leads</a></li>
-        <li class="nav-item me-4"><a href="#profile" class="nav-link" :class="selectedType == 'panels'? 'active' : ''" data-bs-toggle="tab"
-                @click="setTags('panels')">Panels</a></li>
+        <li class="nav-item me-4"><a href="#home" class="nav-link" :class="selectedType == undefined ? 'active' : ''"
+                data-bs-toggle="tab" @click="setTags('all')">All</a></li>
+        <li class="nav-item me-4"><a href="#profile" class="nav-link" :class="selectedType == 'leads' ? 'active' : ''"
+                data-bs-toggle="tab" @click="setTags('leads')">Leads</a></li>
+        <li class="nav-item me-4"><a href="#profile" class="nav-link" :class="selectedType == 'panels' ? 'active' : ''"
+                data-bs-toggle="tab" @click="setTags('panels')">Panels</a></li>
         <li class="nav-item me-4 dropdown">
-            <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" :class="selectedType == 'accounts' || selectedType == 'cosmetics' ? 'active' : ''">
+            <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"
+                :class="selectedType == 'accounts' || selectedType == 'cosmetics' ? 'active' : ''">
                 Other
             </a>
             <div class="dropdown-menu">
@@ -312,29 +313,32 @@ h5 {
                         <div class="mb-4">
                             <h4 style="color:lightgray">{{ this.selectedProduct.price }}$/d</h4>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">Select Panel Active Dates:</label>
-                            <div class="row row-space-10">
-                                <div class="col-8">
-                                    <Datepicker v-model="selectedDates" range placeholder="Select date..."
-                                        :min-date="new Date()" :enable-time-picker="false" :partial-range="false" dark>
-                                    </Datepicker>
+                        <div v-if="selectedType != 'accounts' && selectedType !='leads' && selectedType != 'file'">
+                            <div class="mb-3">
+                                <label class="form-label">Select Panel Active Dates:</label>
+                                <div class="row row-space-10">
+                                    <div class="col-8">
+                                        <Datepicker v-model="selectedDates" range placeholder="Select date..."
+                                            :min-date="new Date()" :enable-time-picker="false" :partial-range="false" dark>
+                                        </Datepicker>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Select Start Time:</label>
-                            <div class="row row-space-10">
-                                <div class="col-8">
-                                    <Datepicker v-model="selectedStartTime" time-picker placeholder="Select start time..."
-                                        dark></Datepicker>
+                            <div class="mb-3">
+                                <label class="form-label">Select Start Time:</label>
+                                <div class="row row-space-10">
+                                    <div class="col-8">
+                                        <Datepicker v-model="selectedStartTime" time-picker
+                                            placeholder="Select start time..." dark></Datepicker>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <span>Setting the time to any previous time today will start the panel immediately, the time will be
-                            adjusted to current time for expiry</span>
-                        <div class="mt-4">
-                            <h4 style="color:lightgray">Total: {{ totalPrice }}$</h4>
+                            <span>Setting the time to any previous time today will start the panel immediately, the time
+                                will be
+                                adjusted to current time for expiry</span>
+                            <div class="mt-4">
+                                <h4 style="color:lightgray">Total: {{ totalPrice }}$</h4>
+                            </div>
                         </div>
                     </div>
                     <div v-else>

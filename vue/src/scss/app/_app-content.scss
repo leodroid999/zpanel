@@ -1,7 +1,13 @@
+.app-container{
+	display:flex; 
+	@include media-breakpoint-down(md) {
+		flex-direction: column;
+	}
+}
 .app-content {
 	padding: $app-content-padding-y $app-content-padding-x;
 	flex: 1;
-	
+	flex-grow:1;
 	@if $enable-rtl {
 		margin-right: $app-sidebar-width;
 	} @else {

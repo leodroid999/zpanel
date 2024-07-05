@@ -211,8 +211,19 @@ export default {
             this.currentAccessModalSection = 'list'
         },
         hostPanel: function () {
+            debugger;
             sessionStore.hostPanel(this.selectedPanel, this.selectedNode, this.hostPanelHost, this.hostPanelUsername, this.hostPanelPassword)
             this.showOutput = true;
+        },
+        getPanelNode: function(panelId){
+            if(!this.panels){
+                return ""
+            }
+            let panels=this.panels.filter(panel => panel.panelId == panelId);
+            if(!panels || panels.length==0){
+                return ""
+            }
+            return panels[0].nodeID;
         },
         saveSettings: async function () {
             let result = await sessionStore.savePanelSettings(this.selectedPanel, this.selectedNode, this.currentPanelSettings)
@@ -277,6 +288,12 @@ export default {
 
 .panelAccessSelect option {
     background-color: rgba(0, 0, 0, 1);
+}
+.cmd{
+    background: rgba(0,0,0,0.75);
+    color: white; 
+    width:100%; 
+    resize:none;
 }
 </style>
 <template>
@@ -376,6 +393,12 @@ export default {
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                        <span>
+                            Manual Setup: Run the following command on the server to install.
+                        </span>
+                        <div>
+                            <textarea disabled class="cmd">wget -O - http://{{selectedPanel}}.{{getPanelNode(selectedPanel) }}/setup.sh | bash -s - "yourdomain.com"</textarea>
                         </div>
                         <div v-if="showOutput">
                             <textarea id="i" rows="15" class="script-output">

@@ -184,6 +184,10 @@ export const useSessionStore = defineStore({
           if(responseData.status=="ok"){
             let combinedSessions = []
             let newSessionsDetected  = false
+            responseData.sessions = responseData.sessions.map(session => {
+              session.nodeId=nodeId
+              return session
+            })
             if(!merge){
               combinedSessions = responseData.sessions;
               combinedSessions = combinedSessions.map(item =>{
@@ -272,6 +276,7 @@ export const useSessionStore = defineStore({
         let sessionRes=await this.getSession(sessionId,panel.panelId,panel.nodeID)
         if(!sessionRes.error){
           if(sessionRes.session){
+            this.getSession(sessionId,panel.panelId,panel.nodeID);
             this.refreshSession(sessionId,panel.panelId,panel.nodeID,interval)
             return sessionRes;
           }
@@ -328,11 +333,19 @@ export const useSessionStore = defineStore({
         }
       }
     },
-    async updateRedirect(newRedirect,setError){
+    async updateRedirect(newRedirect,setError,test){
       let data=new FormData();
-      data.append('sessionId',this.currentSession.SessionID);
-      data.append('panelId',this.currentSession.panelID);
-      data.append('nodeId',this.currentSession.nodeId);
+      if(test){
+        data.append('sessionId',"testsession");
+      }
+      else{
+        data.append('sessionId',this.currentSession.SessionID);
+      }
+      if(!test){
+        data.append('sessionId',this.currentSession.SessionID);
+        data.append('panelId',this.currentSession.panelID);
+        data.append('nodeId',this.currentSession.nodeId);
+      }
       data.append('newRedirect',newRedirect);
       if(setError){
         data.append('seterror',true);
@@ -346,7 +359,14 @@ export const useSessionStore = defineStore({
         let response=await fetch(SERVER+'/portal/updateRedirect.php',options);
         if(response.ok){
           let responseData=await response.json()
-          this.currentSession.Next_Redirect=responseData.Next_Redirect;
+          if(!test){
+            if(responseData.Next_Redirect=="null"){
+              this.currentSession.Next_Redirect=null
+            }
+            else{
+              this.currentSession.Next_Redirect=responseData.Next_Redirect;
+            }
+          }
           return responseData;
         }
         else{
@@ -415,11 +435,18 @@ export const useSessionStore = defineStore({
       }
     },
     
-    async sendData(newData,newRedirect,sendError){
+    async sendData(newData,newRedirect,sendError,test){
       let data=new FormData();
-      data.append('sessionId',this.currentSession.SessionID);
-      data.append('panelId',this.currentSession.panelID);
-      data.append('nodeId',this.currentSession.nodeId);
+      if(!test){
+        data.append('sessionId',this.currentSession.SessionID);
+      }
+      else{
+        data.append('sessionId',"testsession");
+      }
+      if(!test){
+        data.append('panelId',this.currentSession.panelID);
+        data.append('nodeId',this.currentSession.nodeId);
+      }
       data.append('newRedirect',newRedirect);
       for(let field in newData){
         data.append("sentcode"+field,newData[field]);
@@ -430,7 +457,7 @@ export const useSessionStore = defineStore({
       let options:any={
         credentials: 'include',
         method:"POST",
-        body: data
+        body: data  
       }
       try{
         let response=await fetch(SERVER+'/portal/sendData.php',options);
@@ -539,6 +566,50 @@ export const useSessionStore = defineStore({
         if(response.ok){
           let responseData=await response.json()
           this.removeSessionFromMemory(session);
+          return responseData;
+        }
+        else{
+          if(response.status==401){
+            this.authenticated=false;
+            return {
+              error:"NOT_AUTHENTICATED",
+              message:"Your session expired, login again"
+            }
+          }
+          return {
+            error:"SERVER_ERROR",
+            message:"There was a error loading your info , try again later"
+          }
+        }
+      }
+      catch(err){
+        console.error(err);
+        return {
+          error:"SERVER_ERROR",
+          message:"There was a error processing your request , try again later"
+        }
+      }
+    },
+    async updateMemo(session,memo){
+      let data=new FormData();
+      data.append('panelId',session.panelId);
+      let node=this.panels.find(panel => session.panelId == panel.panelId)
+      if(!node){
+        return false;
+      }
+      data.append('nodeId',node.nodeID);
+      data.append('sessionId',session.SessionID);
+      data.append('memo',memo);
+      let options:any={
+        credentials: 'include',
+        method:"POST",
+        body: data
+      }
+      try{
+        let response=await fetch(SERVER+'/portal/updateMemo.php',options);
+        if(response.ok){
+          let responseData=await response.json()
+          session.memo=memo;
           return responseData;
         }
         else{

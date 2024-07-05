@@ -3,16 +3,21 @@ import SidebarNav from '@/components/app/SidebarNav.vue';
 import { useRouter, RouterLink } from 'vue-router'
 import { onMounted } from 'vue';
 import { useUserStore } from '@/stores/userStore';
+import { RouteLocationRaw } from 'vue-router';
+import { useAppOptionStore } from '@/stores/app-option';
 
 defineProps<{
   menu: {
   	icon: String,
   	text: String,
-  	url: String,
+	label: String,
+  	url: RouteLocationRaw,
   	highlight: Boolean,
   	children: Object
   };
 }>();
+
+const appOption = useAppOptionStore();
 
 function subIsActive(urls) {
 	var currentRoute = useRouter().currentRoute.value.path;
@@ -24,6 +29,12 @@ function subIsActive(urls) {
 		}
 	}
 	return match;
+}
+
+function clickMenuItem(){
+	if(window.innerWidth<768.92){
+		(document.getElementsByClassName("app")[0]).classList.add("app-sidebar-mobile-toggled");
+	}
 }
 </script>
 <template>
@@ -46,7 +57,7 @@ function subIsActive(urls) {
   
 	<!-- menu without submenu -->
 	<router-link v-else v-bind:to="menu.url" custom v-slot="{ navigate, href, isActive }">
-		<div class="menu-item" v-bind:class="{ 'active': isActive }">
+		<div class="menu-item" v-bind:class="{ 'active': isActive }" v-on:click="clickMenuItem">
 			<a v-bind:href="href" @click="navigate" class="menu-link">
 				<span class="menu-icon" v-if="menu.icon">
 					<i v-bind:class="menu.icon"></i>

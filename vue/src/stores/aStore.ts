@@ -254,7 +254,7 @@ export const useAStore = defineStore({
     async deployPage(panelId,nodeId,pageId,folderName){
       this.scriptOutput="";
       var xhr = new XMLHttpRequest();
-      var url = SERVER+'/functions/deploypage.php'
+      var url = SERVER+'/portal/admin/deploypage.php'
       let formData=new FormData();
       xhr.open("POST", url, true);  
       let last_index=0;
