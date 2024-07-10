@@ -10,7 +10,7 @@ root / pQd2xCJ8zwr9YMLnKZUhHB
 
 
 
-http://z-panel.io/pm
+https://dolph.app/pm/
 vue / TaxsSQL83819
 
 
@@ -30,3 +30,5 @@ jamesbond / jamesbond
 sftp://dolph.app
 root
 >WRITTEN PASSWORD<
+
+

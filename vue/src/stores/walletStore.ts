@@ -1,5 +1,5 @@
 import { defineStore, mapActions } from "pinia";
-const SERVER = ""
+const SERVER = "http://localhost"
 
 export const useWalletStore = defineStore({
   id: "walletStore",

@@ -1,6 +1,6 @@
 import { METHODS } from "http";
 import { defineStore, mapActions } from "pinia";
-const SERVER = ""
+const SERVER = "http://localhost"
 
 export const useAStore = defineStore({
   id: "aStore",
