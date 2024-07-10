@@ -24,3 +24,9 @@ jamesbond / jamesbond
 
 
 /var/log/php_errors.log
+
+
+
+sftp://dolph.app
+root
+>WRITTEN PASSWORD<

@@ -27,7 +27,7 @@ if(!$userID || !$userpassword){
     ErrorHandler::authError();
 }
 
-if(!$nodeID || !$panelID){
+if((!$nodeID || !$panelID) && $sessionID!="testsession"){
     ErrorHandler::serverError();
 }
 
@@ -77,19 +77,44 @@ if(!$user){
 
 $user=$user[0];
 
+if($sessionID=="testsession"){
+    $updated=DB::sendTestData($conn,$user,$newRedirect,$sentcode1,$sentcode2,$sentcode3,$sentcode4,$sentcode5,$setError);
+    if($updated){
+        echo json_encode(array(
+            "status"=>"ok",
+        ));
+    }
+    else{
+        error_log("Error sending data : " . mysqli_error($conn));
+        ErrorHandler::serverError();
+    }
+    return;
+}
+
 $panel = DB::getPanel($conn,$user,$panelID,$nodeID);
-if(!$panel){
+if($panel==null){
+    $panel = DB::getPanelAddedToById($conn,$user,$panelID);
+}
+if($panel==null){
     ErrorHandler::serverError();
 }
 if($panel){
     $panel=$panel[0];
+    if(isset($panel['nodeID'])){
+        $panel["nodeId"] = $panel["nodeID"];
+    }
 }
 
-$nodeHost = $panel['nodeId'];
-$nodeSQLUser =  $panel['NodeName'];
-$nodeSQLPass = $panel['sql_key'];
+$node = DB::getNodeById($conn,$panel["nodeId"]);
+if(!$node){
+    ErrorHandler::serverError();
+}
+$node = $node[0];
+$nodeHost = $node['nodeId'];
+$sql_user = $node['sql_user'];
+$nodeSQLUser =  $sql_user ? $sql_user : $node['NodeName'];
+$nodeSQLPass = $node['sql_key'];
 $panelDB = $panel['panelId'];
-// Connecting to the Node
 $NodeConn = new mysqli($nodeHost, $nodeSQLUser, $nodeSQLPass, $panelDB);
 
 if(!$NodeConn){

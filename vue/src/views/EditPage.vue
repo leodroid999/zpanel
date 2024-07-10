@@ -686,7 +686,7 @@ h4 {
                         data-bs-toggle="modal" data-bs-target="#modalErrors">
                         Manage Errors <i class="bi bi-ban"></i>
                     </button>
-                    <a :href="'//z-panel.io/portal/blueprints/?id=' + this.blueprint.blueprint" target="_blank">
+                    <a :href="'//dolph.app/portal/blueprints/?id=' + this.blueprint.blueprint" target="_blank">
                         <button type="button" class="btn-h btn gap btn-outline-theme btn-sm" data-token="End">
                             Test page <i class="bi bi-caret-right-square-fill"></i>
                         </button>

@@ -13,7 +13,7 @@ let baseMenu = [
   {
     url: "/logs",
     icon: "bi bi-gem",
-    text: "Logs",
+    text: "Traffic",
   } /*,{
       'url': '/todo',
       'icon': 'bi bi-check-square',
@@ -30,18 +30,18 @@ let baseMenu = [
     url: "/memo",
     icon: "bi bi-sticky",
     text: "Memo",
-  }*/,
+  },
   {
     url: "/sites",
     icon: "bi bi-hdd",
     text: "My Servers",
-  },
+  }*/,
   {
     url: "/panels",
     icon: "bi bi-hdd-network",
     text: "My Panels",
   },
-  /*
+  
   {
     icon: "bi bi-shop",
     text: "Shop",
@@ -73,7 +73,7 @@ let baseMenu = [
       },
     ],
   },
-  */
+  
   {
     is_divider: true,
   },
@@ -81,7 +81,7 @@ let baseMenu = [
     text: "Users",
     is_header: true,
   },
-/*
+
   {
     url: "/wallet",
     icon: "bi bi-wallet",
@@ -92,7 +92,7 @@ let baseMenu = [
     icon: "fas fa-shopping-cart",
     text: "Order",
   },
-  */
+  
   /* {
       'url': '/info', 
       'icon': 'bi bi-info-lg',
@@ -106,6 +106,11 @@ let baseMenu = [
     url: "/settings",
     icon: "bi bi-gear",
     text: "Settings",
+  },
+{
+    url: "/faq",
+    icon: "bi bi-flag",
+    text: "Help",
   },
 ];
 const adminOptions = [

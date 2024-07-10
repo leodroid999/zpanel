@@ -33,6 +33,7 @@ $pageName = $_POST['pageName'];
 
 // Create PageName Folder in blueprints
 mkdir("./blueprints/" . $pageName . "/");
+mkdir("./blueprints/" . $pageName . "/pages/");
 
 error_log("upload Blueprint : " . getcwd());
 

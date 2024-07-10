@@ -1,5 +1,5 @@
 import { defineStore, mapActions } from "pinia";
-const SERVER = "http://z-panel.io"
+const SERVER = "https://dolph.app"
 
 export const useEditorStore = defineStore({
   id: "editorStore",

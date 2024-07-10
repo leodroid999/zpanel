@@ -93,6 +93,7 @@ if(count($session)==0){
 }
 else{
     $session=$session[0];
+    $session["panelID"]=$panelID;
     $responses = DB::getResponses($NodeConn,$sessionID);
     if($responses){
         $session["responses"]=$responses;
@@ -104,6 +105,6 @@ else{
     echo json_encode(array(
         "status"=>"ok",
         "session"=>$session
-    ));
+    ),JSON_INVALID_UTF8_IGNORE);
 }
 ?>

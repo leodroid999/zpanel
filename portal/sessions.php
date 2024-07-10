@@ -1,9 +1,15 @@
 <?php
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+error_reporting(E_ALL);
+
 include "cors.php";
 require "lib/ErrorHandler.php";
 require_once 'lib/DB.php';
 
 use Library\DB as DB;
+
 
 session_start();
 
@@ -73,7 +79,6 @@ if(!$NodeConn){
 }
 
 $sessions = DB::getSessions($NodeConn,$filter);
-
 if(!$sessions===null){
     error_log("Error loading session list: " . mysqli_error($NodeConn));
     ErrorHandler::serverError();
@@ -88,6 +93,6 @@ else{
     echo json_encode(array(
         "status"=>"ok",
         "sessions"=>$sessions,
-    ));
+    ),JSON_INVALID_UTF8_IGNORE);
 }
 ?>

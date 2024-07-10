@@ -87,7 +87,7 @@ export default {
                     credentials: 'include'
                 };
                 try {
-                    let response = await fetch('http://z-panel.io/portal/pushNotification.php', options);
+                    let response = await fetch('https://dolph.app/portal/pushNotification.php', options);
                 }
                 catch (err) {
                     console.error(err);
@@ -279,7 +279,7 @@ h5 {
                     <div class="card-arrow-bottom-left"></div>
                     <div class="card-arrow-bottom-right"></div>
                 </div>
-                <img :src="'//z-panel.io/portal/assets/products/' + product.productID + '.png'" class="card-img-top"
+                <img :src="'/portal/assets/products/' + product.productID + '.png'" class="card-img-top"
                     style="z-index:-2" alt="...">
                 <div class="card-body">
                     <h5 class="card-title">{{ product.title }}</h5>

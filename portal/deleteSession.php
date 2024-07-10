@@ -54,7 +54,7 @@ $node = DB::getNodeById($conn,$panel["nodeId"]);
 if(!$node){
     ErrorHandler::serverError();
 }
-$node = $node[0];;
+$node = $node[0];
 $nodeHost = $node['nodeId'];
 $sql_user = $node['sql_user'];
 $nodeSQLUser =  $sql_user ? $sql_user : $node['NodeName'];

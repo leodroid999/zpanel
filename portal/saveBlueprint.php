@@ -30,7 +30,15 @@ if (!$user) {
 
 $blueprint = json_decode($_POST['blueprint']);
 
-$result = DB::saveBlueprint($conn, $blueprint);
+$thumbnail = $_FILES['thumbnail'];
+if($thumbnail){
+    $result = DB::saveBlueprintThumb($conn, $blueprint, $_FILES['thumbnail']['name']);
+
+    move_uploaded_file($_FILES['thumbnail']['tmp_name'], "./assets/icons/" . $_FILES['thumbnail']['name']);
+}
+else
+    $result = DB::saveBlueprint($conn, $blueprint);
+
 // error_log(var_export($result, true));
 
 if ($result) {

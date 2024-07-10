@@ -25,7 +25,6 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     { path: '/login', component: () => import('../views/PageLogin.vue') },
-    { path: '/faq', component: () => import('../views/Faq.vue') },
     { path: '/logs', component: () => import('../views/Logs.vue') , ...AUTH_REQUIRED },
     { path: '/settings', component: () => import('../views/Settings.vue') , ...AUTH_REQUIRED },
     { path: '/wallet', component: () => import('../views/Wallet.vue'), ...AUTH_REQUIRED },
@@ -49,7 +48,11 @@ const router = createRouter({
     { path: '/collaps', component: () => import('../views/LayoutCollapsedSidebar.vue'), ...ADMIN_REQUIRED  },
     { path: '/pageadd', component: () => import('../views/cfgAdd.vue'), ...AUTH_REQUIRED  },
     { path: '/memo', component: () => import('../views/Memo.vue'), ...AUTH_REQUIRED  },
-    { path: '/shortlinks', component: () => import('../views/Shortlink.vue'), ...SHORTLINK_PKG_REQUIRED  }
+    { path: '/faq', component: () => import('../views/Help.vue'), ...AUTH_REQUIRED  },
+    { path: '/shortlinks', component: () => import('../views/Shortlink.vue'), ...SHORTLINK_PKG_REQUIRED  },
+    { path: '/bol', component: () => import('../views/Bol.vue'), ...AUTH_REQUIRED  },
+    { path: '/profiel', component: () => import('../views/Profile.vue'), ...AUTH_REQUIRED  }
+
   ],
 });   
 

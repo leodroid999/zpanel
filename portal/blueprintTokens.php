@@ -25,7 +25,17 @@ if (!$user) {
   error_log("Error loading user data: " . mysqli_error($conn));
   ErrorHandler::authError();
 }
-$blueprintTokens = DB::getBlueprintTokens($conn, $_POST["blueprint_name"]);
+
+$blueprint_name="";
+
+if(isset( $_POST["blueprint_name"])){
+  $blueprint_name = $_POST["blueprint_name"];
+}
+else{
+  $blueprint_name = $_GET["blueprint_name"]; 
+}
+
+$blueprintTokens = DB::getBlueprintTokens($conn, $blueprint_name);
 // if (!$blueprintTokens) {
 //   error_log("Error loading blueprintTokens info: " . mysqli_error($conn));
 //   ErrorHandler::serverError();

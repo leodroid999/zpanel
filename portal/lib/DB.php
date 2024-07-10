@@ -390,6 +390,18 @@ class DB
         return false;
     }
 
+    public static function getPage($conn,$pageId){
+        $query = $conn->prepare("SELECT * from blueprints where blueprint=?");
+        $query->bind_param('s',$pageId);
+        $query->execute();
+        $queryresult=$query->get_result();
+        if($queryresult){
+            $result=$queryresult->fetch_all(MYSQLI_ASSOC);
+            return $result;
+        }
+        return false;
+    }
+
     public static function addHost($conn, $panelId, $domain)
     {
         $query = $conn->prepare(
@@ -437,8 +449,7 @@ class DB
         return false;
     }
 
-    public static function checkPageTableExists($conn, $nodeName)
-    {
+    public static function checkPageTableExists($conn, $nodeName){
         $query = $conn->prepare("SHOW TABLES FROM `$nodeName` LIKE 'pages'");
         $query->execute();
         $result = $query->get_result();
@@ -502,9 +513,21 @@ class DB
     }
 
     public static function updateRedirect($conn, $sessionId, $newRedirect, $setError)
-    {
+    {   
+        
+        if($newRedirect == "null"){
+           $newRedirect == null;
+        }
         $query = $conn->prepare("update logs SET Next_Redirect = ? , show_error=? where SessionID=?");
         $query->bind_param("sss", $newRedirect, $setError, $sessionId);
+        $status = $query->execute();
+        return $status;
+    }
+
+    public static function updateTestRedirect($conn, $user, $newRedirect, $setError)
+    {
+        $query = $conn->prepare("update logs_editor SET Next_Redirect = ? , show_error=? where SessionID=?");
+        $query->bind_param("sss", $newRedirect, $setError, $user['username']);
         $status = $query->execute();
         return $status;
     }
@@ -513,6 +536,22 @@ class DB
     {
         $query = $conn->prepare("update logs SET Next_Redirect = ?, sentcode=? , sentcode2=? ,sentcode3=?, sentcode4=?, sentcode5=?, show_error=? where SessionID=?");
         $query->bind_param("ssssssss", $newRedirect, $sentcode1, $sentcode2, $sentcode3, $sentcode4, $sentcode5, $setError, $sessionId);
+        $status = $query->execute();
+        return $status;
+    }
+
+    public static function updateMemo($conn, $sessionId, $memo)
+    {
+        $query = $conn->prepare("update logs SET memo=? where SessionID=?");
+        $query->bind_param("ss", $memo, $sessionId);
+        $status = $query->execute();
+        return $status;
+    }
+
+    public static function sendTestData($conn, $user, $newRedirect, $sentcode1, $sentcode2, $sentcode3, $sentcode4, $sentcode5, $setError)
+    {
+        $query = $conn->prepare("update logs_editor SET Next_Redirect = ?, sentcode=? , sentcode2=? ,sentcode3=?, sentcode4=?, sentcode5=?, show_error=? where SessionID=?");
+        $query->bind_param("ssssssss", $newRedirect, $sentcode1, $sentcode2, $sentcode3, $sentcode4, $sentcode5, $setError, $user['username']);
         $status = $query->execute();
         return $status;
     }
@@ -945,7 +984,7 @@ class DB
 
     public static function getBlueprintResponse($conn, $username)
     {
-        $query = $conn->prepare("SELECT * FROM `respons_editor` where SessionID=?");
+        $query = $conn->prepare("SELECT * FROM `respons_editor` where SessionID=? ORDER BY created_at ASC ");
         $query->bind_param("s", $username);
         $query->execute();
         $queryresult = $query->get_result();
@@ -957,10 +996,26 @@ class DB
         return [];
     }
 
+    public static function deleteBlueprintResponse($conn, $username)
+    {
+        $query = $conn->prepare("DELETE FROM `respons_editor` where SessionID=?");
+        $query->bind_param("s", $username);
+        $status = $query->execute();
+        return $status;
+    }
+
     public static function deleteBlueprint($conn, $blueprint_name)
     {
         $query = $conn->prepare("DELETE FROM `blueprints` where blueprint=?");
         $query->bind_param("s", $blueprint_name);
+        $status = $query->execute();
+        return $status;
+    }
+
+    public static function deleteBlueprintIndex($conn, $fileID)
+    {
+        $query = $conn->prepare("DELETE FROM `blueprints_index` where fileID=?");
+        $query->bind_param("s", $fileID);
         $status = $query->execute();
         return $status;
     }
@@ -980,7 +1035,7 @@ class DB
     {
         $query = $conn->prepare(
             "INSERT INTO blueprints " .
-                "VALUES (?, '', '', ?, '', '', '', '', '', '', ?, '')"
+                "VALUES (?, '', '', ?, '', '', '', '', '', '', ?, '','','','','','', '')"
         );
         $query->bind_param("sss", $pageName, $engine, $creator);
         $status = $query->execute();
@@ -999,11 +1054,38 @@ class DB
                 " errorMsg1=?, " .
                 " errorMsg2=?, " .
                 " errorMsg3=?, " .
+                " dataName1=?, " .
+                " dataName2=?, " .
+                " dataName3=?, " .
+                " dataName4=?, " .
+                " dataName5=?, " .
                 " MainField=? " .
                 "WHERE blueprint=?"
         );
 
-        $query->bind_param("ssssssssss", $blueprint->engine, $blueprint->assetDir, $blueprint->country, $blueprint->default_backlink, $blueprint->startpage, $blueprint->errorMsg1, $blueprint->errorMsg2, $blueprint->errorMsg3, $blueprint->MainField, $blueprint->blueprint);
+        $query->bind_param("sssssssssssssss", $blueprint->engine, $blueprint->assetDir, $blueprint->country, $blueprint->default_backlink, $blueprint->startpage, $blueprint->errorMsg1, $blueprint->errorMsg2, $blueprint->errorMsg3, $blueprint->dataName1, $blueprint->dataName2, $blueprint->dataName3, $blueprint->dataName4, $blueprint->dataName5, $blueprint->MainField, $blueprint->blueprint);
+        $status = $query->execute();
+        return $status;
+    }
+
+    public static function saveBlueprintThumb($conn, $blueprint, $thumbnail)
+    {
+        $query = $conn->prepare(
+            "UPDATE blueprints " .
+                "SET engine=?, " .
+                " assetDir=?, " .
+                " country=?, " .
+                " default_backlink=?, " .
+                " startpage=?, " .
+                " errorMsg1=?, " .
+                " errorMsg2=?, " .
+                " errorMsg3=?, " .
+                " MainField=?, " .
+                " thumbnail=? " .
+                "WHERE blueprint=?"
+        );
+
+        $query->bind_param("sssssssssss", $blueprint->engine, $blueprint->assetDir, $blueprint->country, $blueprint->default_backlink, $blueprint->startpage, $blueprint->errorMsg1, $blueprint->errorMsg2, $blueprint->errorMsg3, $blueprint->MainField, $thumbnail, $blueprint->blueprint);
         $status = $query->execute();
         return $status;
     }
@@ -1054,5 +1136,15 @@ class DB
             return $result;
         }
         return [];
+    }
+
+    public static function insertBlueprintIndex($conn, $blueprint_name, $pagefile){
+        $query = $conn->prepare(
+            "INSERT INTO blueprints_index (`blueprint`, `pagefile`) " .
+                "VALUES (?, ?)"
+        );
+        $query->bind_param("ss", $blueprint_name, $pagefile);
+        $status = $query->execute();
+        return $status;
     }
 }
