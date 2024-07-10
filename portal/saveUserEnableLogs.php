@@ -10,43 +10,41 @@ session_start();
 
 $userID = $_SESSION['userID'];
 
-
 if (!isset($userID)) {
     ErrorHandler::authError();
 }
+
 // Connect to the database
 $conn = DB::connect();
+
 // Check connection
 if (!$conn) {
     error_log("Connection failed: " . mysqli_connect_error());
     ErrorHandler::serverError();
 }
 
-$user = DB::getUser($conn, $userID);
+$user = DB::getUser($conn, $userID, true);
 if (!$user) {
     error_log("Error loading user data: " . mysqli_error($conn));
     ErrorHandler::authError();
 }
 
-$token = json_decode($_POST['token']);
+$user = $user[0];
 
-$result = DB::insertBlueprintToken($conn, $token);
-// error_log(var_export($result, true));
+$enableLogs = $_POST['enableLogs'];
+
+if ($enableLogs == 'true')
+    $enableLogs = 1;
+else
+    $enableLogs = 0;
+
+$result = DB::saveUserEnableLogs($conn, $userID, $enableLogs);
 
 if ($result) {
-    echo json_encode(
-        array(
-            "status" => "ok",
-            "message" => "Blueprint saved successfully.",
-        )
-    );
+    echo json_encode(array(
+        "status" => "ok",
+        "message" => "Saved sucessfully.",
+    ));
 } else {
-    echo json_encode(
-        array(
-            "status" => "error",
-            "message" => "Error saving blueprint",
-            "error" => $result
-        )
-    );
+    ErrorHandler::serverError();
 }
-?>

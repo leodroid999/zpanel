@@ -25,9 +25,9 @@ export default {
 			saveUsernameError: null,
 			saveChatIDError: null,
 			saveNotificationError: null,
-			saveThemecolorError : null,
-			newAppSetting : "",
-			saveAppSettingError : '',
+			saveThemecolorError: null,
+			newEnableLogsAsHome: false,
+			saveAppSettingError: '',
 
 			themeList: [
 				{ name: 'Pink', bgClass: 'bg-pink', themeClass: 'theme-pink' },
@@ -83,7 +83,7 @@ export default {
 			// this.reloadVariable();
 		},
 
-		
+
 		freloadVariable() {
 			var newVariables = generateVariables();
 			appVariable.font = newVariables.font;
@@ -150,10 +150,10 @@ export default {
 			}
 		},
 		saveAppSettings: async function () {
-			let updatedInfo = {
-				appSetting: this.newAppSetting ? 'true' : 'false'
-			}
-			let result = await userStore.saveUserInfo(this.currentPassword, updatedInfo)
+			// let updatedInfo = {
+			// 	enableLogsAsHome: this.newEnableLogsAsHome ? 'true' : 'false'
+			// }
+			let result = await userStore.saveEnableLogs(this.user.Enable_LogsAsHome)
 			if (!result || (result.status != "ok" && !result.message)) {
 				this.saveAppSettingError = "There was an error, try again"
 			}
@@ -257,7 +257,8 @@ export default {
 									<div class="flex-1 text-break">
 										<div>Telegram chatID</div>
 										<div class="text-inverse text-opacity-50 d-flex align-items-center">
-											<i class="fa fa-circle fs-8px fa-fw text-success me-1"></i> {{ user.chatID }}
+											<i class="fa fa-circle fs-8px fa-fw text-success me-1"></i> {{ user.chatID
+											}}
 										</div>
 									</div>
 									<div>
@@ -302,7 +303,7 @@ export default {
 					<!-- BEGIN #AppSettings -->
 					<div id="appSettings" class="mb-5">
 						<h4><i class="bi bi-gear fa-fw text-theme"></i> App Settings</h4>
-						<p>Enable or disable App Settings.</p>
+						<p>Enable to view Logs instead of Dashboard.</p>
 						<card>
 							<div v-if="user" class="list-group list-group-flush">
 
@@ -311,7 +312,7 @@ export default {
 										<div>App Settings</div>
 										<div class="text-inverse text-opacity-50 d-flex align-items-center">
 											<div v-if="user">
-												<div v-if="user.appSetting">
+												<div v-if="user.Enable_LogsAsHome">
 													<i class="fa fa-circle fs-8px fa-fw text-success me-1"></i>
 													<span>Enabled</span>
 												</div>
@@ -399,7 +400,8 @@ export default {
 							<label class="form-label">Username</label>
 							<div class="row row-space-10">
 								<div class="col-8">
-									<input v-model="newUsername" class="form-control" required placeholder="New Username" />
+									<input v-model="newUsername" class="form-control" required
+										placeholder="New Username" />
 								</div>
 							</div>
 						</div>
@@ -604,7 +606,8 @@ export default {
 					</div>
 					<div class="modal-footer">
 						<button type="button" class="btn btn-outline-default" data-bs-dismiss="modal">Close</button>
-						<button type="button" class="btn btn-outline-theme" @click="saveNotification">Save changes</button>
+						<button type="button" class="btn btn-outline-theme" @click="saveNotification">Save
+							changes</button>
 					</div>
 				</div>
 			</div>
@@ -624,14 +627,18 @@ export default {
 							<div class="row row-space-10">
 								<div class="col-8">
 									<div class="form-check">
-										<input class="form-check-input" type="checkbox" v-model="newAppSetting"
+										<input v-if="user.Enable_LogsAsHome" class="form-check-input" type="checkbox" checked v-model="user.Enable_LogsAsHome"
 											id="defaultCheckAppSetting">
-										<label class="form-check-label" for="defaultCheckAppSetting">Enable App Setting</label>
+										<input  v-else class="form-check-input" type="checkbox" v-model="user.Enable_LogsAsHome"
+											id="defaultCheckAppSetting">
+
+										<label class="form-check-label" for="defaultCheckAppSetting">Enable App
+											Setting</label>
 									</div>
 								</div>
 							</div>
 							<div class="alert bg-inverse bg-opacity-10 border-0">
-								Check if you want to configure App Setting.
+								Check if you want to configure to view Logs instead of Dashboard.
 							</div>
 							<!-- <div class="mb-3">
 								<label class="form-label">Enter password</label>
@@ -651,7 +658,8 @@ export default {
 					</div>
 					<div class="modal-footer">
 						<button type="button" class="btn btn-outline-default" data-bs-dismiss="modal">Close</button>
-						<button type="button" class="btn btn-outline-theme" @click="saveAppSettings">Save changes</button>
+						<button type="button" class="btn btn-outline-theme" @click="saveAppSettings">Save
+							changes</button>
 					</div>
 				</div>
 			</div>

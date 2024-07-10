@@ -35,14 +35,19 @@ export default {
 		onLogin: function(result){
 			this.loginError=result.message;
 			if(!result.error){
-				setTimeout(()=>{
+				setTimeout(async ()=>{
 					let redirect=localStorage.getItem("redirectTo");
 					if(redirect){
 						this.$router.push(redirect)
 						localStorage.removeItem("redirectTo")
 						return;
 					}
-					this.$router.push("/")
+
+					var userInfo = await userStore.getUserInfo();
+					if(userInfo.user.Enable_LogsAsHome)
+						this.$router.push("/logs");
+					else	
+						this.$router.push("/")
 				}, 100)
 			}
 		},

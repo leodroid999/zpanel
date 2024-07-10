@@ -21,7 +21,7 @@ export const useUserStore = defineStore({
         notificationsSeen: new Set(),
         memo: "",
         themeClass : "",
-        appSetting: false,
+        enableLogsAsHome : false,
     }
   },
   actions:{
@@ -142,7 +142,9 @@ export const useUserStore = defineStore({
             this.user=responseData.user;
             this.memo=atob(responseData.user.memo);
             this.themeClass=responseData.user.themeColor;
-            this.appSetting = responseData.user.appSetting;
+            this.enableLogsAsHome = responseData.user.Enable_LogsAsHome;
+
+            console.log(responseData.user);
           }
           return responseData;
         }
@@ -256,6 +258,40 @@ export const useUserStore = defineStore({
       }
       try{
         let response=await fetch(SERVER+'/portal/saveUserTheme.php',options);
+        if(response.ok){
+          let responseData=await response.json()
+          this.getUserInfo()
+          return responseData;
+        }
+        else{
+          return {
+            error:"SERVER_ERROR",
+            message:"There was a error processing your request , try again later"
+          }
+        }
+      }
+      catch(err){
+        console.error(err);
+        return {
+          error:"SERVER_ERROR",
+          message:"There was a error processing your request , try again later"
+        }
+      }
+    },
+
+
+    // Update Theme Color
+    async saveEnableLogs(enableLogs){
+      let data=new FormData();
+      data.append("enableLogs", enableLogs);
+
+      let options={
+        method:"POST",
+        body: data,
+        credentials: 'include'
+      }
+      try{
+        let response=await fetch(SERVER+'/portal/saveUserEnableLogs.php',options);
         if(response.ok){
           let responseData=await response.json()
           this.getUserInfo()
