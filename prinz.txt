@@ -1,30 +1,13 @@
+https://docs.google.com/document/d/12JEyRTlsQxTGX0o_AUnvKgKNKh7VVl04rJ2bB551v6w/edit
+
 Prinz
-
-ftp://z-panel.io
-root / pQd2xCJ8zwr9YMLnKZUhHB
-
-
-SSH 
-z-panel.io
-root / pQd2xCJ8zwr9YMLnKZUhHB
-
 
 
 https://dolph.app/pm/
 vue / TaxsSQL83819
 
 
-
-
-http://z-panel.io:5173/login
-
-jamesbond / jamesbond
-
-
-
-
 /var/log/php_errors.log
-
 
 
 sftp://dolph.app

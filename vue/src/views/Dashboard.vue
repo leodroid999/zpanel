@@ -10,6 +10,7 @@ import { ref } from 'vue'
 import { useUserStore } from '@/stores/userStore';
 import { useSiteWidgetStore } from '@/stores/siteWidgetStore';
 import { useAppOptionStore } from '@/stores/app-option';
+import { useRouter, RouterLink } from 'vue-router';
 
 const appVariable = useAppVariableStore();
 const sessionStore = useSessionStore();
@@ -373,8 +374,8 @@ export default {
 					<h2 class="card-title">{{ balance }} </h2>
 					<br />
 					<div style="padding: 0px; margin: 0px">
-						<a href="#" style="float: right; bottom: 0; margin-left: 5px" class="btn btn-outline-theme">Top
-							up</a>
+						<RouterLink to="/wallet"><div href="#" style="float: right; bottom: 0; margin-left: 5px" class="btn btn-outline-theme">Top
+							up</div></RouterLink>
 					</div>
 				</div>
 				<div class="card-arrow">

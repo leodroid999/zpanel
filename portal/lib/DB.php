@@ -7,8 +7,8 @@ class DB
     const servername = "localhost";
     // const username = "vue";
     // const password = "TaxsSQL83819";
-        const username = "root";
-      const password = "";
+    const username = "root";
+    const password = "";
     const dbname = "testbase";
 
     public static function connect()
