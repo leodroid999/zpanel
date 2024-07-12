@@ -1,405 +1,465 @@
 import { defineStore, mapActions } from "pinia";
-// const SERVER = ""
-const SERVER = "http://localhost"
+const SERVER = ""
+// const SERVER = "http://localhost"
 
 export const useUserStore = defineStore({
   id: "userStore",
-  state: () => {
-    let authenticated=false;
-    let enabledNotificationSound=false;
-    if(localStorage.getItem("authenticated")){
-       authenticated=true;
-    }
+  state: async () => {
+    let authenticated = false;
+    let enabledNotificationSound = false;
+
     if (navigator.userActivation && navigator.userActivation.hasBeenActive) {
-      enabledNotificationSound=true;
+      enabledNotificationSound = true;
     }
+
+    console.log(authenticated);
+
     return {
-        authenticated,
-        user:null,
-        notifications:null,
-        newNotifications:null,
-        enabledNotificationSound:false,
-        notificationsSeen: new Set(),
-        memo: "",
-        themeClass : "",
-        enableLogsAsHome : false,
+      authenticated,
+      user: null,
+      notifications: null,
+      newNotifications: null,
+      enabledNotificationSound: false,
+      notificationsSeen: new Set(),
+      memo: "",
+      themeClass: "",
+      enableLogsAsHome: false,
+      rememberToken: '',
     }
   },
-  actions:{
-    async logout(){
-      let options={
-        method:"POST",
+  actions: {
+    async logout() {
+      let options = {
+        method: "POST",
         body: "",
         credentials: 'include'
       }
-      let response=await fetch(SERVER+'/portal/logout.php',options);
-      if(response.ok){
-        let responseData=await response.json()
-        if(responseData.status=="ok"){
-          this.authenticated=false;
+      let response = await fetch(SERVER + '/portal/logout.php', options);
+      if (response.ok) {
+        let responseData = await response.json()
+        if (responseData.status == "ok") {
+          this.authenticated = false;
+          this.rememberToken = '';
+
           localStorage.clear()
-          this.user=null;
+          this.user = null;
         }
         return responseData;
       }
-      else{
+      else {
         return {
-          error:"SERVER_ERROR",
-          message:"There was a error processing your request , try again later"
+          error: "SERVER_ERROR",
+          message: "There was a error processing your request , try again later"
         }
       }
     },
 
-    async login(username,password){
-      if(!username || !password){
+    async checkRememberToken(){
+      this.authenticated = false;
+      var remember_token = localStorage.getItem("remember_token");
+      if (remember_token) {
+  
+        // Check remember_token 
+        let data = new FormData();
+        data.append('remember_token', remember_token);
+  
+        let options = {
+          method: "POST",
+          body: data,
+          credentials: 'include'
+        }
+        try {
+          let response = await fetch(SERVER + '/portal/logincheck.php', options);
+          if (response.ok) {
+            let responseData = await response.json()
+            if (responseData.status == "ok") {
+              this.authenticated = true;
+
+              await this.getUserInfo();
+            }
+          }
+          else {
+            return {
+              error: "SERVER_ERROR",
+              message: "There was a error processing your request , try again later"
+            }
+          }
+        }
+        catch (err) {
+          console.error(err);
+          return {
+            error: "SERVER_ERROR",
+            message: "There was a error processing your request , try again later"
+          }
+        }
+      }
+      
+      return this.authenticated;
+    },
+
+    async login(username, password, rememberMe) {
+      if (!username || !password) {
         return;
       }
-      this.authenticated=false;
-      localStorage.removeItem("authenticated");
-      this.user=null;
-      let data=new FormData();
-      data.append('username',username);
-      data.append('password',password);
-      let options={
-        method:"POST",
+      this.authenticated = false;
+      localStorage.removeItem("remember_token");
+
+      this.user = null;
+      let data = new FormData();
+      data.append('username', username);
+      data.append('password', password);
+      data.append('remember_me', rememberMe);
+
+      let options = {
+        method: "POST",
         body: data,
         credentials: 'include'
       }
-      try{
-        let response=await fetch(SERVER+'/portal/logincheck.php',options);
-        if(response.ok){
-          let responseData=await response.json()
-          if(responseData.status=="ok"){
-            this.authenticated=true;
-            localStorage.setItem("authenticated",true)
+      try {
+        let response = await fetch(SERVER + '/portal/logincheck.php', options);
+        if (response.ok) {
+          let responseData = await response.json()
+          if (responseData.status == "ok") {
+            this.authenticated = true;
+
+            await this.getUserInfo();
+            if(rememberMe)
+              localStorage.setItem("remember_token", responseData.remeber_token);
           }
           return responseData;
         }
-        else{
+        else {
           return {
-            error:"SERVER_ERROR",
-            message:"There was a error processing your request , try again later"
+            error: "SERVER_ERROR",
+            message: "There was a error processing your request , try again later"
           }
         }
       }
-      catch(err){
+      catch (err) {
         console.error(err);
         return {
-          error:"SERVER_ERROR",
-          message:"There was a error processing your request , try again later"
+          error: "SERVER_ERROR",
+          message: "There was a error processing your request , try again later"
         }
       }
     },
-    
-    async register(username,password,telegram,referal){
-      if(!username || !password){
+
+    async checkLoginStatus(){
+      if(!this.authenticated)
+        await this.checkRememberToken();
+
+      return this.authenticated;
+    },
+
+    async register(username, password, telegram, referal) {
+      if (!username || !password) {
         return;
       }
-      let data=new FormData();
-      data.append('username',username);
-      data.append('password',password);
-      data.append('telegram',telegram);
-      data.append('referal',password);
-      let options={
-        method:"POST",
+      let data = new FormData();
+      data.append('username', username);
+      data.append('password', password);
+      data.append('telegram', telegram);
+      data.append('referal', password);
+      let options = {
+        method: "POST",
         body: data,
         credentials: 'include'
       }
-      try{
-        let response=await fetch(SERVER+'/portal/register.php',options);
-        if(response.ok){
-          let responseData=await response.json()
-          if(responseData.status=="ok"){
-            this.authenticated=true;
+      try {
+        let response = await fetch(SERVER + '/portal/register.php', options);
+        if (response.ok) {
+          let responseData = await response.json()
+          if (responseData.status == "ok") {
+            this.authenticated = true;
           }
           return responseData;
         }
-        else{
+        else {
           return {
-            error:"SERVER_ERROR",
-            message:"There was a error processing your request , try again later"
+            error: "SERVER_ERROR",
+            message: "There was a error processing your request , try again later"
           }
         }
       }
-      catch(err){
+      catch (err) {
         console.error(err);
         return {
-          error:"SERVER_ERROR",
-          message:"There was a error processing your request , try again later"
+          error: "SERVER_ERROR",
+          message: "There was a error processing your request , try again later"
         }
       }
     },
-    
-    async getUserInfo(){
-      let options={
+
+    async getUserInfo() {
+      let options = {
         credentials: 'include'
       }
-      try{
-        let response=await fetch(SERVER+'/portal/userinfo.php',options);
-        if(response.ok){
-          let responseData=await response.json()
-          if(responseData.status=="ok"){
-            this.authenticated=true;
-            this.user=responseData.user;
-            this.memo=atob(responseData.user.memo);
-            this.themeClass=responseData.user.themeColor;
+      try {
+        let response = await fetch(SERVER + '/portal/userinfo.php', options);
+        if (response.ok) {
+          let responseData = await response.json()
+          if (responseData.status == "ok") {
+            this.authenticated = true;
+            this.user = responseData.user;
+            this.memo = atob(responseData.user.memo);
+            this.themeClass = responseData.user.themeColor;
             this.enableLogsAsHome = responseData.user.Enable_LogsAsHome;
 
             console.log(responseData.user);
           }
           return responseData;
         }
-        else{
-          if(response.status==401){
-            this.authenticated=false;
+        else {
+          if (response.status == 401) {
+            this.authenticated = false;
             return {
-              error:"NOT_AUTHENTICATED",
-              message:"Your session expired, login again"
+              error: "NOT_AUTHENTICATED",
+              message: "Your session expired, login again"
             }
           }
           return {
-            error:"SERVER_ERROR",
-            message:"There was a error loading your info , try again later"
+            error: "SERVER_ERROR",
+            message: "There was a error loading your info , try again later"
           }
         }
       }
-      catch(err){
+      catch (err) {
         console.error(err);
         return {
-          error:"SERVER_ERROR",
-          message:"There was a error processing your request , try again later"
+          error: "SERVER_ERROR",
+          message: "There was a error processing your request , try again later"
         }
       }
     },
-    
-    async saveUserInfo(currentPassword,updatedInfo){
+
+    async saveUserInfo(currentPassword, updatedInfo) {
       // if(!currentPassword){
       //   return;
       // }
-      let data=new FormData();
-      data.append('currentPassword',currentPassword)
-      let fields=['username','newPassword','chatID','telegram','referal', 'webNotifs', 'appSetting']
-      for(let field of fields){
-          if(updatedInfo[field] && updatedInfo[field]!=""){
-              data.append(field,updatedInfo[field])
-          }
+      let data = new FormData();
+      data.append('currentPassword', currentPassword)
+      let fields = ['username', 'newPassword', 'chatID', 'telegram', 'referal', 'webNotifs', 'appSetting']
+      for (let field of fields) {
+        if (updatedInfo[field] && updatedInfo[field] != "") {
+          data.append(field, updatedInfo[field])
+        }
       }
-      let options={
-        method:"POST",
+      let options = {
+        method: "POST",
         body: data,
         credentials: 'include'
       }
-      try{
-        let response=await fetch(SERVER+'/portal/saveUserInfo.php',options);
-        if(response.ok){
-          let responseData=await response.json()
+      try {
+        let response = await fetch(SERVER + '/portal/saveUserInfo.php', options);
+        if (response.ok) {
+          let responseData = await response.json()
           this.getUserInfo()
           return responseData;
         }
-        else{
+        else {
           return {
-            error:"SERVER_ERROR",
-            message:"There was a error processing your request , try again later"
+            error: "SERVER_ERROR",
+            message: "There was a error processing your request , try again later"
           }
         }
       }
-      catch(err){
+      catch (err) {
         console.error(err);
         return {
-          error:"SERVER_ERROR",
-          message:"There was a error processing your request , try again later"
+          error: "SERVER_ERROR",
+          message: "There was a error processing your request , try again later"
         }
       }
     },
 
 
     // Update user memo
-    async saveMemo(memo){
-      let data=new FormData();
+    async saveMemo(memo) {
+      let data = new FormData();
       data.append("memo", btoa(memo));
 
-      let options={
-        method:"POST",
+      let options = {
+        method: "POST",
         body: data,
         credentials: 'include'
       }
-      try{
-        let response=await fetch(SERVER+'/portal/saveUserMemo.php',options);
-        if(response.ok){
-          let responseData=await response.json()
+      try {
+        let response = await fetch(SERVER + '/portal/saveUserMemo.php', options);
+        if (response.ok) {
+          let responseData = await response.json()
           this.getUserInfo()
           return responseData;
         }
-        else{
+        else {
           return {
-            error:"SERVER_ERROR",
-            message:"There was a error processing your request , try again later"
+            error: "SERVER_ERROR",
+            message: "There was a error processing your request , try again later"
           }
         }
       }
-      catch(err){
+      catch (err) {
         console.error(err);
         return {
-          error:"SERVER_ERROR",
-          message:"There was a error processing your request , try again later"
+          error: "SERVER_ERROR",
+          message: "There was a error processing your request , try again later"
         }
       }
     },
 
 
     // Update Theme Color
-    async saveThemeColor(colorClass){
-      let data=new FormData();
+    async saveThemeColor(colorClass) {
+      let data = new FormData();
       data.append("color", colorClass);
 
-      let options={
-        method:"POST",
+      let options = {
+        method: "POST",
         body: data,
         credentials: 'include'
       }
-      try{
-        let response=await fetch(SERVER+'/portal/saveUserTheme.php',options);
-        if(response.ok){
-          let responseData=await response.json()
+      try {
+        let response = await fetch(SERVER + '/portal/saveUserTheme.php', options);
+        if (response.ok) {
+          let responseData = await response.json()
           this.getUserInfo()
           return responseData;
         }
-        else{
+        else {
           return {
-            error:"SERVER_ERROR",
-            message:"There was a error processing your request , try again later"
+            error: "SERVER_ERROR",
+            message: "There was a error processing your request , try again later"
           }
         }
       }
-      catch(err){
+      catch (err) {
         console.error(err);
         return {
-          error:"SERVER_ERROR",
-          message:"There was a error processing your request , try again later"
+          error: "SERVER_ERROR",
+          message: "There was a error processing your request , try again later"
         }
       }
     },
 
 
     // Update Theme Color
-    async saveEnableLogs(enableLogs){
-      let data=new FormData();
+    async saveEnableLogs(enableLogs) {
+      let data = new FormData();
       data.append("enableLogs", enableLogs);
 
-      let options={
-        method:"POST",
+      let options = {
+        method: "POST",
         body: data,
         credentials: 'include'
       }
-      try{
-        let response=await fetch(SERVER+'/portal/saveUserEnableLogs.php',options);
-        if(response.ok){
-          let responseData=await response.json()
+      try {
+        let response = await fetch(SERVER + '/portal/saveUserEnableLogs.php', options);
+        if (response.ok) {
+          let responseData = await response.json()
           this.getUserInfo()
           return responseData;
         }
-        else{
+        else {
           return {
-            error:"SERVER_ERROR",
-            message:"There was a error processing your request , try again later"
+            error: "SERVER_ERROR",
+            message: "There was a error processing your request , try again later"
           }
         }
       }
-      catch(err){
+      catch (err) {
         console.error(err);
         return {
-          error:"SERVER_ERROR",
-          message:"There was a error processing your request , try again later"
+          error: "SERVER_ERROR",
+          message: "There was a error processing your request , try again later"
         }
       }
     },
 
 
-    async getNotifications(){
-      let options={
+    async getNotifications() {
+      let options = {
         credentials: 'include'
       }
-      try{
-        let response=await fetch(SERVER+'/portal/notifications.php',options);
-        if(response.ok){
-          let responseData=await response.json()
-          if(responseData.status=="ok"){
-            let newNotifications=responseData.notifications.filter(notification => {
-              if(!this.notificationsSeen.has(notification.notificationID)){
-                  this.notificationsSeen.add(notification.notificationID)
-                  return notification;
+      try {
+        let response = await fetch(SERVER + '/portal/notifications.php', options);
+        if (response.ok) {
+          let responseData = await response.json()
+          if (responseData.status == "ok") {
+            let newNotifications = responseData.notifications.filter(notification => {
+              if (!this.notificationsSeen.has(notification.notificationID)) {
+                this.notificationsSeen.add(notification.notificationID)
+                return notification;
               }
             })
-            if(!this.notifications || this.notifications.length==0){
-              this.notifications=this.newNotifications
+            if (!this.notifications || this.notifications.length == 0) {
+              this.notifications = this.newNotifications
             }
-            else{
-              let combinedNotifications=newNotifications.concat(this.notifications);
-              if(combinedNotifications.length>25){
-                combinedNotifications.slice(0,25)
+            else {
+              let combinedNotifications = newNotifications.concat(this.notifications);
+              if (combinedNotifications.length > 25) {
+                combinedNotifications.slice(0, 25)
               }
-              this.notifications=combinedNotifications
+              this.notifications = combinedNotifications
             }
             this.newNotifications = newNotifications;
           }
           return responseData;
         }
-        else{
-          if(response.status==401){
-            this.authenticated=false;
+        else {
+          if (response.status == 401) {
+            this.authenticated = false;
             return {
-              error:"NOT_AUTHENTICATED",
-              message:"Your session expired, login again"
+              error: "NOT_AUTHENTICATED",
+              message: "Your session expired, login again"
             }
           }
           return {
-            error:"SERVER_ERROR",
-            message:"There was a error loading your info , try again later"
+            error: "SERVER_ERROR",
+            message: "There was a error loading your info , try again later"
           }
         }
       }
-      catch(err){
+      catch (err) {
         console.error(err);
         return {
-          error:"SERVER_ERROR",
-          message:"There was a error processing your request , try again later"
+          error: "SERVER_ERROR",
+          message: "There was a error processing your request , try again later"
         }
       }
     },
 
-    async markNotificationsRead(){
-      let options={
+    async markNotificationsRead() {
+      let options = {
         credentials: 'include',
         method: 'POST'
       }
-      try{
-        let response=await fetch(SERVER+'/portal/notifications.php',options);
-        if(response.ok){
-          let responseData=await response.json()
+      try {
+        let response = await fetch(SERVER + '/portal/notifications.php', options);
+        if (response.ok) {
+          let responseData = await response.json()
           return responseData;
         }
-        else{
-          if(response.status==401){
-            this.authenticated=false;
+        else {
+          if (response.status == 401) {
+            this.authenticated = false;
             return {
-              error:"NOT_AUTHENTICATED",
-              message:"Your session expired, login again"
+              error: "NOT_AUTHENTICATED",
+              message: "Your session expired, login again"
             }
           }
           return {
-            error:"SERVER_ERROR",
-            message:"There was a error loading your info , try again later"
+            error: "SERVER_ERROR",
+            message: "There was a error loading your info , try again later"
           }
         }
       }
-      catch(err){
+      catch (err) {
         console.error(err);
         return {
-          error:"SERVER_ERROR",
-          message:"There was a error processing your request , try again later"
+          error: "SERVER_ERROR",
+          message: "There was a error processing your request , try again later"
         }
       }
     }
-    
+
   },
 });

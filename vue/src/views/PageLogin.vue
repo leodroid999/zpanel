@@ -30,9 +30,10 @@ export default {
 				this.loginError = "Missing username or password"
 				return
 			}
-			userStore.login(this.usernameInput,this.passwordInput)
+			userStore.login(this.usernameInput,this.passwordInput, this.rememberMe)
 		},
 		onLogin: function(result){
+			console.log("onLogin");
 			this.loginError=result.message;
 			if(!result.error){
 				setTimeout(async ()=>{
@@ -43,6 +44,7 @@ export default {
 						return;
 					}
 
+					console.log("onLogin111");
 					var userInfo = await userStore.getUserInfo();
 					if(userInfo.user.Enable_LogsAsHome)
 						this.$router.push("/logs");
@@ -59,6 +61,7 @@ export default {
 		return {
 			usernameInput: "",
 			passwordInput: "",
+			rememberMe : false,
 			loginError: null
 		}
 	},
@@ -87,7 +90,7 @@ export default {
 				</div>
 				<div class="mb-3">
 					<div class="form-check">
-						<input class="form-check-input" type="checkbox" value="" id="customCheck1" />
+						<input class="form-check-input" type="checkbox" v-model="rememberMe" id="customCheck1" />
 						<label class="form-check-label" for="customCheck1">Remember me</label>
 					</div>
 				</div>
