@@ -1,6 +1,6 @@
 import { defineStore, mapActions } from "pinia";
-const SERVER = ""
-// const SERVER = "http://localhost"
+// const SERVER = ""
+const SERVER = "http://localhost"
 
 export const useUserStore = defineStore({
   id: "userStore",
@@ -57,6 +57,8 @@ export const useUserStore = defineStore({
     async checkRememberToken(){
       this.authenticated = false;
       var remember_token = localStorage.getItem("remember_token");
+      console.log("old remember_token : ", remember_token);
+      
       if (remember_token) {
   
         // Check remember_token 
