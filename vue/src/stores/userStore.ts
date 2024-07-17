@@ -1,6 +1,6 @@
 import { defineStore, mapActions } from "pinia";
-// const SERVER = ""
-const SERVER = "http://localhost"
+const SERVER = ""
+// const SERVER = "http://localhost"
 
 export const useUserStore = defineStore({
   id: "userStore",
@@ -8,11 +8,15 @@ export const useUserStore = defineStore({
     let authenticated = false;
     let enabledNotificationSound = false;
 
+    if (localStorage.getItem("authenticated")) {
+      authenticated = true;
+    }
+
     if (navigator.userActivation && navigator.userActivation.hasBeenActive) {
       enabledNotificationSound = true;
     }
 
-    console.log(authenticated);
+
 
     return {
       authenticated,
@@ -54,17 +58,15 @@ export const useUserStore = defineStore({
       }
     },
 
-    async checkRememberToken(){
+    async checkRememberToken() {
       this.authenticated = false;
       var remember_token = localStorage.getItem("remember_token");
-      console.log("old remember_token : ", remember_token);
-      
       if (remember_token) {
-  
+
         // Check remember_token 
         let data = new FormData();
         data.append('remember_token', remember_token);
-  
+
         let options = {
           method: "POST",
           body: data,
@@ -76,6 +78,8 @@ export const useUserStore = defineStore({
             let responseData = await response.json()
             if (responseData.status == "ok") {
               this.authenticated = true;
+
+              localStorage.setItem("authenticated", true);
 
               await this.getUserInfo();
             }
@@ -95,7 +99,7 @@ export const useUserStore = defineStore({
           }
         }
       }
-      
+
       return this.authenticated;
     },
 
@@ -125,7 +129,7 @@ export const useUserStore = defineStore({
             this.authenticated = true;
 
             await this.getUserInfo();
-            if(rememberMe)
+            if (rememberMe)
               localStorage.setItem("remember_token", responseData.remeber_token);
           }
           return responseData;
@@ -146,8 +150,13 @@ export const useUserStore = defineStore({
       }
     },
 
-    async checkLoginStatus(){
-      if(!this.authenticated)
+    async checkLoginStatus() {
+
+      if (localStorage.getItem("authenticated")) {
+        this.authenticated = true;
+      }
+
+      if (localStorage.getItem("remember_token"))
         await this.checkRememberToken();
 
       return this.authenticated;

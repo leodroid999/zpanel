@@ -5,14 +5,17 @@ require 'vendor/autoload.php';
 require "lib/ErrorHandler.php";
 session_start();
 
+ini_set('display_errors', '1');
+ini_set('display_startup_errors', '1');
+error_reporting(E_ALL);
+
 use Library\Wallet as Wallet;
 use Library\Api as Api;
 use Library\DB as DB;
 
-$userpassword = $_SESSION['userSessionPass'];
 $userID = $_SESSION['userID'];
 
-if(!isset($userID) || !isset($userpassword)){
+if(!isset($userID)){
     ErrorHandler::authError();
 }
 
@@ -24,35 +27,6 @@ if (!$db) {
     error_log("Connection failed: " . mysqli_connect_error());
     ErrorHandler::serverError();
 }
-
-// change this to server side sessions saved in sql
-
-// Query to retrieve the hashed password
-$sql = "SELECT password FROM users WHERE userID = '$userID' LIMIT 1";
-$result = $db->query($sql);
-
-// Check if the query was successful
-if ($result && $result->num_rows > 0) {
-    // Fetch the first row
-    $row = $result->fetch_assoc();
-    // Echo the hashed password
-    $hashed_password = $row['password'];
-
-} else {
-    echo "No results found.";
-}
-
-if (password_verify($userpassword, $hashed_password)) {
-  // echo "Welcome! Session Length & HASH integrity valid";
-  // echo $hashed_password;
-  // echo $userpassword;
-} else {
-   //echo "Password does not match.";
-   session_destroy();
-   ErrorHandler::authError();
-   exit;
-}
-
 
 $user = DB::getUser($db, $userID);
 if ($user) {

@@ -44,6 +44,8 @@ export default {
 						return;
 					}
 
+					localStorage.setItem("authenticated", true);
+
 					console.log("onLogin111");
 					var userInfo = await userStore.getUserInfo();
 					if(userInfo.user.Enable_LogsAsHome)
