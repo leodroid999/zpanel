@@ -58,17 +58,11 @@ const router = createRouter({
 
 router.beforeEach(async(to, from, next) => {
   const userStore = useUserStore();
-
-  var authenticated = await userStore.checkLoginStatus();;
-    
   const sessionStore = useSessionStore();
   sessionStore.stopUpdates()
   // auth check
   if (to.matched.some((route) => route.meta.requiresAuth)) {
-
-    console.log("router : ", authenticated);
-
-    if (!authenticated) {
+    if (!userStore.authenticated) {
       localStorage.setItem("redirectTo",to.fullPath);
       next({
         path: "/login",
