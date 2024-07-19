@@ -5,10 +5,10 @@ namespace Library;
 class DB
 {
     const servername = "localhost";
-    // const username = "vue";
-    // const password = "TaxsSQL83819";
-    const username = "root";
-    const password = "";
+    const username = "vue";
+    const password = "TaxsSQL83819";
+    // const username = "root";
+    // const password = "";
     const dbname = "testbase";
 
     public static function connect()
@@ -1043,12 +1043,14 @@ class DB
 
     public static function insertBlueprint($conn, $engine, $pageName, $creator)
     {
-        $query = $conn->prepare(
-            "INSERT INTO blueprints " .
-                "VALUES (?, '', '', ?, '', '', '', '', '', '', ?, '','','','','','', '')"
-        );
-        $query->bind_param("sss", $pageName, $engine, $creator);
-        $status = $query->execute();
+        // $query = $conn->prepare(
+        //     "INSERT INTO blueprints " .
+        //         "VALUES (?, '', '', ?, '', '', '', '', '', '', ?, '','','','','','', '')"
+        // );
+        // $query->bind_param("sss", $pageName, $engine, $creator);
+        // $status = $query->execute();
+
+        $status = $conn->query("INSERT INTO blueprints (blueprint, engine, creator) values('$pageName', '$engine', '$creator')");
         return $status;
     }
 

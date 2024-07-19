@@ -39,6 +39,7 @@ error_log("upload Blueprint : " . getcwd());
 
 
 $result = DB::insertBlueprint($conn, $engine, $pageName, $user[0]["username"]);
+
 error_log(var_export($result, true));
 
 if ($result) {
@@ -54,7 +55,8 @@ if ($result) {
     echo json_encode(
         array(
             "status" => "error",
-            "message" => "Error saving blueprint"
+            "message" => "Error saving blueprint",
+            'result' => $result
         )
     );
 }
