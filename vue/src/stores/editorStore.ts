@@ -1,5 +1,6 @@
 import { defineStore, mapActions } from "pinia";
-const SERVER = "https://dolph.app"
+// const SERVER = "https://dolph.app"
+const SERVER = "http://localhost"
 
 export const useEditorStore = defineStore({
   id: "editorStore",

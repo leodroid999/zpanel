@@ -22,14 +22,15 @@ export default {
                 wait_lag: false,
                 enable_redirectpulse: false,
                 groupId: null,
+                show_hidden_tokens: false,
             },
-            comboInputs:{
-				1:"",
-				2:"",
-				3:"",
-				4:"",
-				5:""
-			},
+            comboInputs: {
+                1: "",
+                2: "",
+                3: "",
+                4: "",
+                5: ""
+            },
             tokenButtonTypes: [
                 "standard",
                 "error",
@@ -96,7 +97,7 @@ export default {
             let blueprintFiles = await editorStore.loadBlueprintFiles(this.blueprint);
             this.blueprint.files = blueprintFiles;
 
-            console.log(this.blueprint.tokens);
+            console.log("blueprint.tokens : ", this.blueprint.tokens);
             console.log(this.blueprint.index);
             console.log(this.blueprint.files);
 
@@ -110,25 +111,25 @@ export default {
         },
 
         saveBlueprintToken: async function () {
-            let prevType=this.blueprintToken.tokenButtonType;
-            if(this.blueprintToken.tokenButtonType.startsWith("combo")){
+            let prevType = this.blueprintToken.tokenButtonType;
+            if (this.blueprintToken.tokenButtonType.startsWith("combo")) {
                 let groupId = this.blueprintToken.groupId;
-                if(!groupId){
+                if (!groupId) {
                     return;
                 }
                 let buttonId = 1;
-                if(this.comboOptions[groupId]){
-                    for(let option of this.comboOptions[groupId]){
-                        if(option.order >= buttonId){
+                if (this.comboOptions[groupId]) {
+                    for (let option of this.comboOptions[groupId]) {
+                        if (option.order >= buttonId) {
                             buttonId = option.order + 1;
                         }
                     }
                 }
                 this.blueprintToken.tokenButtonType = "combo_" + groupId + "_" + buttonId
             }
-            let response = await editorStore.addBlueprintToken(this.blueprintToken); 
+            let response = await editorStore.addBlueprintToken(this.blueprintToken);
             console.log(response);
-            this.blueprintToken.tokenButtonType=prevType;
+            this.blueprintToken.tokenButtonType = prevType;
             if (response.status == "ok")
                 this.loadBlueprintsInfo();
         },
@@ -237,35 +238,35 @@ export default {
                         this.sendDataModal.show()
                         return;
                     }
-                    if(selectedToken.tokenButtonType.startsWith("combo")){
-					    let parts=selectedToken.tokenButtonType.split("_")
-					    if(parts.length==3){
-							let input = parts[1]
-							let field = parts[2]
-							let isError = (selectedToken.SendTokenWithError == "1" || selectedToken.SendTokenWithError == 1);
-							if(isError){
-								field=1;
-							}
-					        let value=this.comboInputs[input]
-							let fieldValues={}
-							for(let i=1;i<=5;i++){
-								let existingField = ""
-								if(i==1){
-									existingField = "sentcode"
-								}
-								else{
-									existingField = "sentcode" + i;
-								}
-								if(this.logs[existingField]){
-									fieldValues[i]=this.logs[existingField]
-								}
-							}
-							fieldValues[field]=value
-							console.log(fieldValues)
-							sessionStore.sendData(fieldValues, selectedToken.tokenName, isError, true)
-							return;
-					    }
-					}
+                    if (selectedToken.tokenButtonType.startsWith("combo")) {
+                        let parts = selectedToken.tokenButtonType.split("_")
+                        if (parts.length == 3) {
+                            let input = parts[1]
+                            let field = parts[2]
+                            let isError = (selectedToken.SendTokenWithError == "1" || selectedToken.SendTokenWithError == 1);
+                            if (isError) {
+                                field = 1;
+                            }
+                            let value = this.comboInputs[input]
+                            let fieldValues = {}
+                            for (let i = 1; i <= 5; i++) {
+                                let existingField = ""
+                                if (i == 1) {
+                                    existingField = "sentcode"
+                                }
+                                else {
+                                    existingField = "sentcode" + i;
+                                }
+                                if (this.logs[existingField]) {
+                                    fieldValues[i] = this.logs[existingField]
+                                }
+                            }
+                            fieldValues[field] = value
+                            console.log(fieldValues)
+                            sessionStore.sendData(fieldValues, selectedToken.tokenName, isError, true)
+                            return;
+                        }
+                    }
                     let sendError = (selectedToken.SendTokenWithError == "1" || selectedToken.SendTokenWithError == 1);
                     sessionStore.updateRedirect(selectedToken.tokenName, sendError, true);
                 }
@@ -294,25 +295,26 @@ export default {
         },
 
         showOptionButton: function (buttonName) {
-            if (buttonName == '' || buttonName == undefined)
-                return 'd-none';
+            if (!this.show_hidden_tokens)
+                if (buttonName == '' || buttonName == undefined)
+                    return 'd-none';
         },
 
         btnStyle: function (option) {
-			let isError=(option.SendTokenWithError == "1" || option.SendTokenWithError == 1);
-			if(option.tokenButtonType.startsWith("combo")){
-			    if(isError){
-					return "btn-h btn gap btn-outline-danger btn-sm btn-combo"
-				}
-				else{
-					return "btn-h btn gap btn-outline-theme btn-sm btn-combo"
-				}
-			}
-			if (option.tokenButtonType == "error") {
-				return "btn-h btn gap btn-outline-danger btn-sm"
-			}
-			return "btn-h btn gap btn-outline-theme btn-sm"
-		},
+            let isError = (option.SendTokenWithError == "1" || option.SendTokenWithError == 1);
+            if (option.tokenButtonType.startsWith("combo")) {
+                if (isError) {
+                    return "btn-h btn gap btn-outline-danger btn-sm btn-combo"
+                }
+                else {
+                    return "btn-h btn gap btn-outline-theme btn-sm btn-combo"
+                }
+            }
+            if (option.tokenButtonType == "error") {
+                return "btn-h btn gap btn-outline-danger btn-sm"
+            }
+            return "btn-h btn gap btn-outline-theme btn-sm"
+        },
 
         async clearResponses() {
             let response = await editorStore.deleteBlueprintResponses(this.blueprint);
@@ -344,42 +346,42 @@ export default {
             return []
         },
         comboOptions: function () {
-			if (this.blueprint && this.blueprint.tokens) {
-				let options = this.blueprint.tokens
-				let filteredOptions = options.filter(option => {
-					return option.tokenButtonType.startsWith("combo")
-				})
-				
-				let groupedOptions={}
+            if (this.blueprint && this.blueprint.tokens) {
+                let options = this.blueprint.tokens
+                let filteredOptions = options.filter(option => {
+                    return option.tokenButtonType.startsWith("combo")
+                })
 
-				for(let option of filteredOptions){
-					let parts=option.tokenButtonType.split("_");
-					if(parts.length == 3){
-						let group = parts[1]
-						if(!groupedOptions[group]){
-							groupedOptions[group]=[]
-						}
+                let groupedOptions = {}
+
+                for (let option of filteredOptions) {
+                    let parts = option.tokenButtonType.split("_");
+                    if (parts.length == 3) {
+                        let group = parts[1]
+                        if (!groupedOptions[group]) {
+                            groupedOptions[group] = []
+                        }
                         let order = parts[2];
                         option.order = parseInt(order);
-						groupedOptions[group].push(option)
-					}
-				}
+                        groupedOptions[group].push(option)
+                    }
+                }
 
-                for(let groupId of Object.keys(groupedOptions)){
+                for (let groupId of Object.keys(groupedOptions)) {
                     let groupOpt = groupedOptions[groupId]
                     function compareOrder(a, b) {
                         return a.order - b.order;
                     }
                     groupOpt.sort(compareOrder)
                 }
-				return groupedOptions
-			}
-			return []
-		},
+                return groupedOptions
+            }
+            return []
+        },
 
-        comboFields: function(){
-		    return this.comboInputs;
-		},
+        comboFields: function () {
+            return this.comboInputs;
+        },
 
         lastOnlineStatus: function () {
             var now = Date.now() / 1000;
@@ -472,11 +474,11 @@ h4 {
     overflow: visible;
 }
 
-.btn-combo{
-	min-width:6rem;
-	width: max-content;
-	height:2rem
- }
+.btn-combo {
+    min-width: 6rem;
+    width: max-content;
+    height: 2rem
+}
 </style>
 <template>
     <ul class="breadcrumb">
@@ -579,8 +581,8 @@ h4 {
                     <div class="card cardh h-100 container">
                         <div class="card-body" style="display:flex;">
                             <div v-for="option in normalTokens">
-                                <button type="button" class="btn-h btn gap btn-outline-theme btn-sm" :id="option.tokenName"
-                                    :data-token="option.tokenName" @click="onOptionClick"
+                                <button type="button" class="btn-h btn gap btn-outline-theme btn-sm"
+                                    :id="option.tokenName" :data-token="option.tokenName" @click="onOptionClick"
                                     :class="showOptionButton(option.tokenButtonName)">
                                     {{ option.tokenButtonName }}
                                 </button>
@@ -604,39 +606,41 @@ h4 {
                 </div>
 
                 <div class="col">
-				<div v-for="group of Object.keys(comboOptions).sort()">
-					<div v-if="comboOptions[group]" class="card cardh h-100 mb-2">
-						<div class="card-body">
-							<div class="row grow" style="align-items:center">
-								<div class="input-group mb3">
-									<button type="button" v-for="option in comboOptions[group]" :class="btnStyle(option)"
-									@click="onOptionClick" :data-token="option.tokenName">
-									{{ option.tokenButtonName }}
-									</button>
-    								<div class="col-4">
-    									<input class="form-control" style="height:100%" v-model="comboFields[group]">
-    								</div>
-								</div>
+                    <div v-for="group of Object.keys(comboOptions).sort()">
+                        <div v-if="comboOptions[group]" class="card cardh h-100 mb-2">
+                            <div class="card-body">
+                                <div class="row grow" style="align-items:center">
+                                    <div class="input-group mb3">
+                                        <button type="button" v-for="option in comboOptions[group]"
+                                            :class="btnStyle(option)" @click="onOptionClick"
+                                            :data-token="option.tokenName">
+                                            {{ option.tokenButtonName }}
+                                        </button>
+                                        <div class="col-4">
+                                            <input class="form-control" style="height:100%"
+                                                v-model="comboFields[group]">
+                                        </div>
+                                    </div>
 
-							</div>
-						</div>
-						<div class="card-arrow">
-							<div class="card-arrow-top-left"></div>
-							<div class="card-arrow-top-right"></div>
-							<div class="card-arrow-bottom-left"></div>
-							<div class="card-arrow-bottom-right"></div>
-						</div>
-					</div>
-				</div>
-			</div>
+                                </div>
+                            </div>
+                            <div class="card-arrow">
+                                <div class="card-arrow-top-left"></div>
+                                <div class="card-arrow-top-right"></div>
+                                <div class="card-arrow-bottom-left"></div>
+                                <div class="card-arrow-bottom-right"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
                 <h4>Main tokens:</h4>
                 <div class="col">
                     <div class="card cardh h-100 container">
                         <div class="card-body" style="overflow: visible; display:flex;">
                             <div v-for="option in mainTokens">
-                                <button type="button" class="btn-h btn gap btn-outline-theme btn-sm" :id="option.tokenName"
-                                    :data-token="option.tokenName" @click="onOptionClick">
+                                <button type="button" class="btn-h btn gap btn-outline-theme btn-sm"
+                                    :id="option.tokenName" :data-token="option.tokenName" @click="onOptionClick">
                                     {{ option.tokenButtonName }}
                                 </button>
                                 <b-tooltip :target="option.tokenName" triggers="hover">
@@ -673,6 +677,14 @@ h4 {
                     <button type="button" class="btn-h btn gap btn-outline-theme btn-sm" data-token="End"
                         data-bs-toggle="modal" data-bs-target="#modalAddToken">
                         Add token <i class="bi bi-plus-square-dotted"></i>
+                    </button>
+                    <button v-if="!show_hidden_tokens" type="button" class="btn-h btn gap btn-outline-theme btn-sm"
+                        data-token="End" @click="show_hidden_tokens = true">
+                        Show HD token <i class="bi bi-eye"></i>
+                    </button>
+                    <button type="button" v-else class="btn-h btn gap btn-outline-theme btn-sm" data-token="End"
+                        @click="show_hidden_tokens = false">
+                        Hide HD token <i class="bi bi-eye-slash"></i>
                     </button>
                     <button type="button" class="btn-h btn gap btn-outline-danger btn-sm" data-token="End"
                         data-bs-toggle="modal" data-bs-target="#modalRemoveToken">
@@ -844,8 +856,8 @@ h4 {
                     <div class="row row-space-10 mb-3">
                         <div class="col-8">
                             <div class="form-check" v-b-tooltip.hover title="PLACEHOLDER tooltip for x, y">
-                                <input class="form-check-input" type="checkbox" v-model="blueprintToken.SendTokenWithError"
-                                    id="defaultCheck3">
+                                <input class="form-check-input" type="checkbox"
+                                    v-model="blueprintToken.SendTokenWithError" id="defaultCheck3">
                                 <label class="form-check-label" for="defaultCheck3">Enable SendToken with Error</label>
                             </div>
                         </div>
@@ -854,17 +866,18 @@ h4 {
                         <label class="form-label">Enter Token Name</label>
                         <div class="row row-space-10">
                             <div class="col-8">
-                                <input class="form-control" type="text" v-model="blueprintToken.tokenName" v-b-tooltip.hover
-                                    title="PLACEHOLDER tooltip for x, y" placeholder="Token Name" />
+                                <input class="form-control" type="text" v-model="blueprintToken.tokenName"
+                                    v-b-tooltip.hover title="PLACEHOLDER tooltip for x, y" placeholder="Token Name" />
                             </div>
                         </div>
                     </div>
-                    <div class="mb-3" v-if="blueprintToken.tokenButtonType=='combo'">
+                    <div class="mb-3" v-if="blueprintToken.tokenButtonType == 'combo'">
                         <label class="form-label">Enter Group ID</label>
                         <div class="row row-space-10">
                             <div class="col-8">
-                                <input class="form-control" type="text" v-model="blueprintToken.groupId" v-b-tooltip.hover
-                                    title="To show tokens together, enter same id for both" placeholder="Group #" />
+                                <input class="form-control" type="text" v-model="blueprintToken.groupId"
+                                    v-b-tooltip.hover title="To show tokens together, enter same id for both"
+                                    placeholder="Group #" />
                             </div>
                         </div>
                     </div>
@@ -970,7 +983,8 @@ h4 {
                         <label class="form-label">Enter Country</label>
                         <div class="row row-space-10">
                             <div class="col-8">
-                                <input class="form-control" type="text" v-model="blueprint.country" placeholder="Country" />
+                                <input class="form-control" type="text" v-model="blueprint.country"
+                                    placeholder="Country" />
                             </div>
                         </div>
                     </div>
