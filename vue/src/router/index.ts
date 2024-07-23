@@ -51,6 +51,7 @@ const router = createRouter({
     { path: '/faq', component: () => import('../views/Help.vue'), ...AUTH_REQUIRED  },
     { path: '/shortlinks', component: () => import('../views/Shortlink.vue'), ...SHORTLINK_PKG_REQUIRED  },
     { path: '/bol', component: () => import('../views/Bol.vue'), ...AUTH_REQUIRED  },
+    { path: '/adminusers', component: () => import('../views/Admin-Users.vue'), ...AUTH_REQUIRED  },
     { path: '/profiel', component: () => import('../views/Profile.vue'), ...AUTH_REQUIRED  }
 
   ],

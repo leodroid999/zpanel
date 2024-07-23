@@ -25,6 +25,7 @@ class DB
 
     public static function getUser($conn, $userId, $auth = false)
     {
+        // mysqli_report(MYSQLI_REPORT_ALL);
         $query = null;
         if ($auth) {
             $query = $conn->prepare("SELECT username , password, userId, user_type, telegram, balance, webNotifs , lastUpdateBlockBTC, lastUpdateBlockETH, chatID,shortlinksPkg, memo, themeColor, Enable_LogsAsHome from users where userId=?");
@@ -32,6 +33,17 @@ class DB
             $query = $conn->prepare("SELECT username , userId, user_type, telegram, balance, webNotifs , lastUpdateBlockBTC, lastUpdateBlockETH,chatID,shortlinksPkg, memo, themeColor, Enable_LogsAsHome from users where userId=?");
         }
         $query->bind_param('s', $userId);
+        $query->execute();
+        $queryresult = $query->get_result();
+        if ($queryresult) {
+            $result = $queryresult->fetch_all(MYSQLI_ASSOC);
+            return $result;
+        }
+        return false;
+    }
+
+    public static function getAllUsers($conn, $userID){
+        $query = $conn->prepare("SELECT username, balance, user_type, telegram, userId, chatID from users");
         $query->execute();
         $queryresult = $query->get_result();
         if ($queryresult) {

@@ -1,6 +1,6 @@
 import { defineStore, mapActions } from "pinia";
-// const SERVER = ""
-const SERVER = "http://localhost"
+const SERVER = ""
+// const SERVER = "http://localhost"
 
 export const useUserStore = defineStore({
   id: "userStore",
@@ -13,6 +13,7 @@ export const useUserStore = defineStore({
     if (navigator.userActivation && navigator.userActivation.hasBeenActive) {
       enabledNotificationSound=true;
     }
+    
     return {
         authenticated,
         user:null,
@@ -23,6 +24,7 @@ export const useUserStore = defineStore({
         memo: "",
         themeClass : "",
         enableLogsAsHome : false,
+        allUsers : [],
     }
   },
   actions:{
@@ -212,6 +214,46 @@ export const useUserStore = defineStore({
       }
     },
 
+
+    // Get All Users
+    async loadUsersInfo(){
+      let options={
+        credentials: 'include'
+      }
+      try{
+        let response=await fetch(SERVER+'/portal/usersinfo.php',options);
+        if(response.ok){
+          let responseData=await response.json()
+          if(responseData.status=="ok"){
+            console.log(this.allUsers);
+            this.allUsers = JSON.parse(JSON.stringify(responseData.users));
+            console.log(this.allUsers);
+            return responseData;
+          }
+          return responseData;
+        }
+        else{
+          if(response.status==401){
+            this.authenticated=false;
+            return {
+              error:"NOT_AUTHENTICATED",
+              message:"Your session expired, login again"
+            }
+          }
+          return {
+            error:"SERVER_ERROR",
+            message:"There was a error loading your info , try again later"
+          }
+        }
+      }
+      catch(err){
+        console.error(err);
+        return {
+          error:"SERVER_ERROR",
+          message:"There was a error processing your request , try again later"
+        }
+      }
+    },
 
     // Update user memo
     async saveMemo(memo){
