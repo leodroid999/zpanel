@@ -53,6 +53,17 @@ class DB
         return false;
     }
 
+    public static function getAllPanels($conn){
+        $query = $conn->prepare("SELECT panels.*, users.username from panels inner join users on panels.userId = users.userId");
+        $query->execute();
+        $queryresult = $query->get_result();
+        if ($queryresult) {
+            $result = $queryresult->fetch_all(MYSQLI_ASSOC);
+            return $result;
+        }
+        return false;
+    }
+
     public static function getUserId($conn, $username)
     {
         $query = $conn->prepare("SELECT username , userId FROM users WHERE username=?");
