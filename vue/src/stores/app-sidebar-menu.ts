@@ -115,6 +115,13 @@ let baseMenu = [
 ];
 const adminOptions = [
   {
+    is_divider: true,
+  },
+  {
+    text: "Administrator",
+    is_header: true,
+  },
+  {
     url: "/scripts",
     icon: "bi bi-tools",
     text: "Admin",
@@ -123,14 +130,12 @@ const adminOptions = [
     url: "/editor",
     icon: "bi bi-code-slash",
     text: "Editor",
-  }/*,
-  
-  {
-    url: "/collaps",
-    icon: "bi bi-circle",
-    text: "collaps",
   },
-  */
+  {
+    url: "/adminmenus",
+    icon: "bi bi-list",
+    text: "Admin Menus",
+  },
 ];
 
 const shortlinkOptions = [
@@ -147,6 +152,7 @@ export const useAppSidebarMenuStore = defineStore({
       const userStore = useUserStore();
       const user = userStore.user;
       let newMenu = baseMenu;
+      console.log(user);
       if (user && user.user_type == "admin") {
         newMenu = newMenu.concat(adminOptions);
       }
