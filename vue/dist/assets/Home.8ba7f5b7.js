@@ -1,1 +1,0 @@
-import{_ as a,c as e}from"./index.a34405fe.js";const s={},r=e('<ul class="breadcrumb"><li class="breadcrumb-item"><a href="#">Z-panel</a></li><li class="breadcrumb-item active">Dashboard</li></ul><h1 class="page-header"> Dashboard <small></small></h1><p></p>',3);function c(t,l,o,i,d,m){return r}const p=a(s,[["render",c]]);export{p as default};
