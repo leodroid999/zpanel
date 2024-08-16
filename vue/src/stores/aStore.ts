@@ -1,6 +1,15 @@
-import { METHODS } from "http";
 import { defineStore, mapActions } from "pinia";
-const SERVER = "http://localhost"
+import { useUserStore } from '@/stores/userStore';
+const userStore = useUserStore();
+const SERVER = ""
+
+interface AdminStoreState {
+  panels:any[] | null,
+  nodes:any[] | null,
+  users:any[] | null,
+  pages:any[] | null,
+  scriptOutput:string
+}
 
 export const useAStore = defineStore({
   id: "aStore",
@@ -10,8 +19,8 @@ export const useAStore = defineStore({
       nodes:null,
       users:null,
       pages:null,
-      scriptOutput:""
-    }
+      scriptOutput:"" 
+    } as AdminStoreState
   },
   actions:{
     getDefaultUser(){
@@ -25,7 +34,7 @@ export const useAStore = defineStore({
         credentials: 'include'
       }
       try{
-        let response=await fetch(SERVER+'/functions/panelList.php',options);
+        let response=await fetch(SERVER+'/portal/admin/panelList.php',options);
         if(response.ok){
           let responseData=await response.json()
           if(responseData.status=="ok"){
@@ -38,7 +47,7 @@ export const useAStore = defineStore({
         }
         else{
           if(response.status==401){
-            this.authenticated=false;
+            userStore.authenticated=false;
             return {
               error:"NOT_AUTHENTICATED",
               message:"Your session expired, login again"
@@ -63,7 +72,7 @@ export const useAStore = defineStore({
           credentials: 'include'
         }
         try{
-          let response=await fetch(SERVER+'/functions/nodeList.php',options);
+          let response=await fetch(SERVER+'/portal/admin/nodeList.php',options);
           if(response.ok){
             let responseData=await response.json()
             if(responseData.status=="ok"){
@@ -73,7 +82,7 @@ export const useAStore = defineStore({
           }
           else{
             if(response.status==401){
-              this.authenticated=false;
+              userStore.authenticated=false;
               return {
                 error:"NOT_AUTHENTICATED",
                 message:"Your session expired, login again"
@@ -98,7 +107,7 @@ export const useAStore = defineStore({
           credentials: 'include'
         }
         try{
-          let response=await fetch(SERVER+'/functions/userList.php',options);
+          let response=await fetch(SERVER+'/portal/admin/userList.php',options);
           if(response.ok){
             let responseData=await response.json()
             if(responseData.status=="ok"){
@@ -108,7 +117,7 @@ export const useAStore = defineStore({
           }
           else{
             if(response.status==401){
-              this.authenticated=false;
+              userStore.authenticated=false;
               return {
                 error:"NOT_AUTHENTICATED",
                 message:"Your session expired, login again"
@@ -133,7 +142,7 @@ export const useAStore = defineStore({
         credentials: 'include'
       }
       try{
-        let response=await fetch(SERVER+'/functions/pageList.php',options);
+        let response=await fetch(SERVER+'/portal/admin/pageList.php',options);
         if(response.ok){
           let responseData=await response.json()
           if(responseData.status=="ok"){
@@ -143,7 +152,7 @@ export const useAStore = defineStore({
         }
         else{
           if(response.status==401){
-            this.authenticated=false;
+            userStore.authenticated=false;
             return {
               error:"NOT_AUTHENTICATED",
               message:"Your session expired, login again"
@@ -163,14 +172,14 @@ export const useAStore = defineStore({
         }
       }
   },
-    async hostPanel(panelId,nodeId,domain,user,password){
+    async hostPanel(panelId:string,nodeId:string,domain:string,user:string,password:string){
       this.scriptOutput="";
       var xhr = new XMLHttpRequest();
-      var url = SERVER+'/functions/hostpanel.php'
+      var url = SERVER+'/portal/admin/hostpanel.php'
       let formData=new FormData();
       xhr.open("POST", url, true);  
       let last_index=0;
-      let onProgress  = function(){
+      let onProgress  =() => {
         let curr_index = xhr.responseText.length;
         if (last_index == curr_index) return; 
         let newData = xhr.responseText.substring(last_index, curr_index);
@@ -187,14 +196,14 @@ export const useAStore = defineStore({
       formData.append("panelId",panelId);
       xhr.send(formData);
     },
-    async createPanel(panelId,nodeId,userId){
+    async createPanel(panelId:string,nodeId:string,userId:string){
       this.scriptOutput="";
       var xhr = new XMLHttpRequest();
-      var url = SERVER+'/functions/createpanel.php'
+      var url = SERVER+'/portal/admin/createpanel.php'
       let formData=new FormData();
       xhr.open("POST", url, true);  
       let last_index=0;
-      let onProgress  = function(){
+      let onProgress  = () => {
         let curr_index = xhr.responseText.length;
         if (last_index == curr_index) return; 
         let newData = xhr.responseText.substring(last_index, curr_index);
@@ -209,14 +218,14 @@ export const useAStore = defineStore({
       formData.append("userId",userId);
       xhr.send(formData);
     },
-    async deletePanel(panelId,nodeId){
+    async deletePanel(panelId:string,nodeId:string){
       this.scriptOutput="";
       var xhr = new XMLHttpRequest();
-      var url = SERVER+'/functions/deletepanel.php'
+      var url = SERVER+'/portal/admin/deletepanel.php'
       let formData=new FormData();
       xhr.open("POST", url, true);  
       let last_index=0;
-      let onProgress  = function(){
+      let onProgress  = () =>{
         let curr_index = xhr.responseText.length;
         if (last_index == curr_index) return; 
         let newData = xhr.responseText.substring(last_index, curr_index);
@@ -230,14 +239,14 @@ export const useAStore = defineStore({
       formData.append("panelId",panelId); 
       xhr.send(formData);
     }, 
-    async reinstallPanel(panelId,nodeId){
+    async reinstallPanel(panelId:string,nodeId:string){
       this.scriptOutput="";
       var xhr = new XMLHttpRequest();
-      var url = SERVER+'/functions/reinstallpanel.php'
+      var url = SERVER+'/portal/admin/reinstallpanel.php'
       let formData=new FormData();
       xhr.open("POST", url, true);  
       let last_index=0;
-      let onProgress  = function(){
+      let onProgress  = () => {
         let curr_index = xhr.responseText.length;
         if (last_index == curr_index) return; 
         let newData = xhr.responseText.substring(last_index, curr_index);
@@ -251,14 +260,14 @@ export const useAStore = defineStore({
       formData.append("panelId",panelId); 
       xhr.send(formData);
     }, 
-    async deployPage(panelId,nodeId,pageId,folderName){
+    async deployPage(panelId:string, nodeId:string ,pageId:string ,folderName:string ){
       this.scriptOutput="";
       var xhr = new XMLHttpRequest();
       var url = SERVER+'/portal/admin/deploypage.php'
       let formData=new FormData();
       xhr.open("POST", url, true);  
       let last_index=0;
-      let onProgress  = function(){
+      let onProgress  = () => {
         let curr_index = xhr.responseText.length;
         if (last_index == curr_index) return; 
         let newData = xhr.responseText.substring(last_index, curr_index);

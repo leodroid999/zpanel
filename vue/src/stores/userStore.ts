@@ -1,6 +1,6 @@
 import { defineStore, mapActions } from "pinia";
-// const SERVER = ""
-const SERVER = "http://localhost"
+const SERVER = ""
+// const SERVER = "http://localhost"
 
 export const useUserStore = defineStore({
   id: "userStore",

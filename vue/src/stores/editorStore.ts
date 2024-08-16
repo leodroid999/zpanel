@@ -1,20 +1,34 @@
 import { defineStore, mapActions } from "pinia";
-// const SERVER = "https://dolph.app"
-const SERVER = "http://localhost"
+import { useUserStore } from '@/stores/userStore';
+const userStore = useUserStore();
+const SERVER = "https://dolph.app"
+
+interface EditorStore {
+  bluePrints: any[] | null
+  blueprint: any | null,
+  blueprintTokens: any[] | null,
+  testDeployOutput : string,
+  testDeployDone : boolean
+}
+interface BluePrint{
+  blueprint:string
+}
 
 export const useEditorStore = defineStore({
   id: "editorStore",
   state: () => {
     return {
-      blueprints:null,
+      bluePrints:null,
       blueprint:null,
-      blueprintTokens : []
-    }
+      blueprintTokens : [],
+      testDeployOutput: "",
+      testDeployDone: false
+    } as EditorStore
   },
   actions:{
     async loadBlueprints(){
       let options={
-        credentials: 'include'
+        credentials: 'include' as RequestCredentials
       }
       try{
         let response=await fetch(SERVER+'/portal/blueprints.php',options);
@@ -28,7 +42,7 @@ export const useEditorStore = defineStore({
         }
         else{
           if(response.status==401){
-            this.authenticated=false;
+            userStore.authenticated=false;
             return {
               error:"NOT_AUTHENTICATED",
               message:"Your session expired, login again"
@@ -50,7 +64,7 @@ export const useEditorStore = defineStore({
     },
 
     // async uploadBlueprintInfo(cfg, zip, engine){
-    async uploadBlueprintInfo(engine, pageName){
+    async uploadBlueprintInfo(engine:string, pageName:string){
       let data=new FormData();
       // data.append('cfg', cfg);
       // data.append('zip', zip);
@@ -60,7 +74,7 @@ export const useEditorStore = defineStore({
       let options={
         method:"POST",
         body: data,
-        credentials: 'include'
+        credentials: 'include' as RequestCredentials as RequestCredentials
       }
       try{
         let response=await fetch(SERVER+'/portal/uploadBlueprint.php',options);
@@ -85,14 +99,14 @@ export const useEditorStore = defineStore({
       }
     },
 
-    async deleteBlueprint(blueprint){
+    async deleteBlueprint(blueprint:BluePrint){
       let data=new FormData();
       data.append('blueprint_name', blueprint.blueprint);
       
       let options={
         method:"POST",
         body: data,
-        credentials: 'include'
+        credentials: 'include' as RequestCredentials
       }
       try{
         let response=await fetch(SERVER+'/portal/deleteBlueprint.php', options);
@@ -120,14 +134,14 @@ export const useEditorStore = defineStore({
 
 
     // Delete Blueprint Responses
-    async deleteBlueprintResponses(blueprint){
+    async deleteBlueprintResponses(blueprint:BluePrint){
       let data=new FormData();
       data.append('blueprint_name', blueprint.blueprint);
       
       let options={
         method:"POST",
         body: data,
-        credentials: 'include'
+        credentials: 'include' as RequestCredentials
       }
       try{
         let response=await fetch(SERVER+'/portal/deleteBlueprintResponses.php', options);
@@ -153,13 +167,13 @@ export const useEditorStore = defineStore({
 
     },
 
-    async loadBlueprintTokens(blueprint){
+    async loadBlueprintTokens(blueprint:BluePrint){
 
       this.blueprint = blueprint;
 
       let options={
         method:"GET",
-        credentials: 'include'
+        credentials: 'include' as RequestCredentials
       }
       
       try{
@@ -174,7 +188,7 @@ export const useEditorStore = defineStore({
         }
         else{
           if(response.status==401){
-            this.authenticated=false;
+            userStore.authenticated=false;
             return {
               error:"NOT_AUTHENTICATED",
               message:"Your session expired, login again"
@@ -195,12 +209,12 @@ export const useEditorStore = defineStore({
       }
     },
 
-    async loadBlueprintFiles(blueprint){
+    async loadBlueprintFiles(blueprint:BluePrint){
 
       this.blueprint = blueprint;
       let options={
         method:"GET",
-        credentials: 'include'
+        credentials: 'include' as RequestCredentials
       }
       
       try{
@@ -214,7 +228,7 @@ export const useEditorStore = defineStore({
         }
         else{
           if(response.status==401){
-            this.authenticated=false;
+            userStore.authenticated=false;
             return {
               error:"NOT_AUTHENTICATED",
               message:"Your session expired, login again"
@@ -235,7 +249,7 @@ export const useEditorStore = defineStore({
       }
     },
 
-    async loadLogs(blueprint){
+    async loadLogs(blueprint:BluePrint){
 
       this.blueprint = blueprint;
 
@@ -245,7 +259,7 @@ export const useEditorStore = defineStore({
       let options={
         method:"POST",
         body: data,
-        credentials: 'include'
+        credentials: 'include' as RequestCredentials
       }
       
       try{
@@ -258,7 +272,7 @@ export const useEditorStore = defineStore({
         }
         else{
           if(response.status==401){
-            this.authenticated=false;
+            userStore.authenticated=false;
             return {
               error:"NOT_AUTHENTICATED",
               message:"Your session expired, login again"
@@ -279,7 +293,7 @@ export const useEditorStore = defineStore({
       }
     },
 
-    async loadResponses(blueprint){
+    async loadResponses(blueprint:BluePrint){
 
       this.blueprint = blueprint;
 
@@ -289,7 +303,7 @@ export const useEditorStore = defineStore({
       let options={
         method:"POST",
         body: data,
-        credentials: 'include'
+        credentials: 'include' as RequestCredentials
       }
       
       try{
@@ -302,7 +316,7 @@ export const useEditorStore = defineStore({
         }
         else{
           if(response.status==401){
-            this.authenticated=false;
+            userStore.authenticated=false;
             return {
               error:"NOT_AUTHENTICATED",
               message:"Your session expired, login again"
@@ -323,7 +337,7 @@ export const useEditorStore = defineStore({
       }
     },
 
-    async saveBlueprint(blueprint, thumbFile){
+    async saveBlueprint(blueprint:BluePrint, thumbFile:string){
       let data=new FormData();
       data.append('blueprint', JSON.stringify(blueprint));
       
@@ -334,7 +348,7 @@ export const useEditorStore = defineStore({
       let options={
         method:"POST",
         body: data,
-        credentials: 'include'
+        credentials: 'include' as RequestCredentials
       }
       try{
         let response=await fetch(SERVER+'/portal/saveBlueprint.php', options);
@@ -360,14 +374,14 @@ export const useEditorStore = defineStore({
 
     },
     
-    async reindexBlueprint(blueprint){
+    async reindexBlueprint(blueprint:BluePrint){
       let data=new FormData();
       data.append('blueprint_name', blueprint.blueprint);
       
       let options={
         method:"POST",
         body: data,
-        credentials: 'include'
+        credentials: 'include' as RequestCredentials
       }
       try{
         let response=await fetch(SERVER+'/portal/reindexBlueprint.php', options);
@@ -394,14 +408,14 @@ export const useEditorStore = defineStore({
     },
 
 
-    async addBlueprintToken(token){
+    async addBlueprintToken(token:any){
       let data=new FormData();
       data.append('token', JSON.stringify(token));
       
       let options={
         method:"POST",
         body: data,
-        credentials: 'include'
+        credentials: 'include' as RequestCredentials
       }
       try{
         let response=await fetch(SERVER+'/portal/saveBlueprintToken.php', options);
@@ -427,14 +441,14 @@ export const useEditorStore = defineStore({
 
     },
 
-    async deleteBlueprintToken(tokenId){
+    async deleteBlueprintToken(tokenId:string){
       let data=new FormData();
       data.append('blueprint_tokenId', tokenId);
       
       let options={
         method:"POST",
         body: data,
-        credentials: 'include'
+        credentials: 'include' as RequestCredentials
       }
       try{
         let response=await fetch(SERVER+'/portal/deleteBlueprintToken.php', options);
@@ -460,7 +474,7 @@ export const useEditorStore = defineStore({
 
     },
 
-    async loadBlueprintIndex(blueprint){
+    async loadBlueprintIndex(blueprint:BluePrint){
 
       this.blueprint = blueprint;
 
@@ -470,7 +484,7 @@ export const useEditorStore = defineStore({
       let options={
         method:"POST",
         body: data,
-        credentials: 'include'
+        credentials: 'include' as RequestCredentials
       }
       
       try{
@@ -484,7 +498,7 @@ export const useEditorStore = defineStore({
         }
         else{
           if(response.status==401){
-            this.authenticated=false;
+            userStore.authenticated=false;
             return {
               error:"NOT_AUTHENTICATED",
               message:"Your session expired, login again"
@@ -505,14 +519,15 @@ export const useEditorStore = defineStore({
       }
     },
 
-    async archiveBlueprint(blueprint){
+    async archiveBlueprint(blueprint:BluePrint){
+
       let data=new FormData();
       data.append('blueprint', JSON.stringify(blueprint));
       
       let options={
         method:"POST",
         body: data,
-        credentials: 'include'
+        credentials: 'include' as RequestCredentials
       }
       try{
         let response=await fetch(SERVER+'/portal/archiveBlueprint.php', options);
@@ -535,6 +550,27 @@ export const useEditorStore = defineStore({
           message:"There was a error processing your request , try again later"
         }
       }
+    },
+
+    async testDeploy(blueprint:BluePrint){
+      this.testDeployOutput = `Deploying ${blueprint.blueprint} test...`;
+      var xhr = new XMLHttpRequest();
+      var url = SERVER+'/portal/deploytestpage.php'
+      let formData=new FormData();
+      xhr.open("POST", url, true);  
+      let last_index=0;
+      let onProgress  = () => {
+        let curr_index = xhr.responseText.length;
+        if (last_index == curr_index) return; 
+        let newData = xhr.responseText.substring(last_index, curr_index);
+        this.testDeployOutput += newData.replace(/(<([^>]+)>)/gi, "");
+        last_index = curr_index;
+      };
+      onProgress = onProgress.bind(this);
+      xhr.onprogress = onProgress;
+      xhr.withCredentials = true;; 
+      formData.append("blueprint",blueprint.blueprint); 
+      xhr.send(formData);
     }
   },
 });

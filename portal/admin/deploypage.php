@@ -1,14 +1,8 @@
 <?php
-    ini_set('display_errors',1);
-    error_reporting(E_ALL);
-    mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
-
-    require_once "../lib/FS.php";
-    require_once "../lib/DB.php";
-    use Library\DB as DB;
-
-    require_once "../lib/Util.php";
-    require_once "../lib/CMD.php";
+    require_once "lib/FS.php";
+    require_once "lib/DB.php";
+    require_once "lib/Util.php";
+    require_once "lib/CMD.php";
 
     require_once "panel_files/db.php";
     require_once "panel_files/registerPage.sql.php";
@@ -17,8 +11,8 @@
     require_once "panel_files/generateStartPage.php";
     require_once "panel_files/_pageCfg.php";
 
-    include "../cors.php";
-    include "../lib/authcheck.php";
+    include "lib/cors.php";
+    include "lib/authcheck.php";
 
     if($user['user_type']!='admin'){
         return ErrorHandler::authError();
@@ -28,9 +22,8 @@
     $panelId = $_POST['panelId'];
     $pageId = $_POST['pageId'];
     $folderName = $_POST['folderName'];
-
-
-   function DeployPage($nodeId, $panelId, $pageId,$folderName){
+   
+    function DeployPage($nodeId, $panelId, $pageId,$folderName){
         $rand = mt_rand(1, 99999999);
 
         Util::output_line("Deploying page $pageId for $panelId @ node $nodeId");
@@ -39,7 +32,7 @@
             Util::output_line("DB Connection error");
             return;
         }
-        $node=DB::getNodeById($conn,$nodeId);
+        $node=DB::getNode($conn,$nodeId);
         if(!$node or count($node)==0){
             Util::output_line("Couldnt load node info.");
             return;
@@ -60,7 +53,13 @@
             ErrorHandler::authError();
         }
         $user = DB::getUser($conn, $userID);
-        $user = $user[0];
+        if($user){
+            $user=$user[0];
+        }
+        else{
+            Util::output_line("Error getting account info");
+        }
+
         $content=generate_db_file($rand,$node,$panelId,$pageId,$user['chatID']);
         if(!$content){
             Util::output_line("Error generating db config file");
@@ -101,7 +100,6 @@
 
 
         $createTokensFileSrc=FS::create_tempfile($content,"tokenreg");
-        var_dump($content);
         if(!$createTokensFileSrc){
             Util::output_line("Error generating createTokens.sql file");
             return;
@@ -153,8 +151,8 @@
         $baseSrc="/data/fixedbackend.zip";
         $baseTarget="$targetDir/base.zip";
         $pageFilename=$page['assetDir'];
-        $pageSrc="/data/$pageFilename";
-        $pageTarget="$targetDir/$pageFilename";
+        $pageSrc="/data/$pageFilename.zip";
+        $pageTarget="$targetDir/$pageFilename.zip";
         Util::output_line("uploading $baseTarget");
         $uploadDone=FS::upload_file($sftp,$baseSrc,$baseTarget);
         if(!$uploadDone){

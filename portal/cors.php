@@ -5,6 +5,7 @@ $allowedOrigins = [
    'http://z-panel.io',
    'http://z-panel.io:5173',
    'http://localhost:5173',
+   'https://zpanel-dist.vercel.app',
 ];
 
 if (isset($_SERVER['HTTP_ORIGIN'])) {

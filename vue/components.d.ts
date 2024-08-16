@@ -8,7 +8,13 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     Apexcharts: typeof import('./src/components/plugins/Apexcharts.vue')['default']
+    BCol: typeof import('bootstrap-vue-next')['BCol']
+    BContainer: typeof import('bootstrap-vue-next')['BContainer']
+    BFormGroup: typeof import('bootstrap-vue-next')['BFormGroup']
+    BFormSelect: typeof import('bootstrap-vue-next')['BFormSelect']
+    BFormTag: typeof import('bootstrap-vue-next')['BFormTag']
     BFormTags: typeof import('bootstrap-vue-next')['BFormTags']
+    BRow: typeof import('bootstrap-vue-next')['BRow']
     BSpinner: typeof import('bootstrap-vue-next')['BSpinner']
     BTooltip: typeof import('bootstrap-vue-next')['BTooltip']
     Card: typeof import('./src/components/bootstrap/Card.vue')['default']

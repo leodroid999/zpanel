@@ -295,7 +295,7 @@ export default {
         },
 
         showOptionButton: function (buttonName) {
-            if (!this.show_hidden_tokens)
+            if (!this.blueprint.show_hidden_tokens)
                 if (buttonName == '' || buttonName == undefined)
                     return 'd-none';
         },
@@ -319,6 +319,10 @@ export default {
         async clearResponses() {
             let response = await editorStore.deleteBlueprintResponses(this.blueprint);
             console.log(response);
+        },
+
+        testDeploy(){
+            editorStore.testDeploy(this.blueprint)
         }
     },
     computed: {
@@ -390,6 +394,10 @@ export default {
             else
                 return 'Last status: <span class="text-theme"><b>Online</b> </span>';
         },
+
+        testDeployOutput: function() {
+            return editorStore.testDeployOutput;
+        }
     },
     async mounted() {
         this.sendDataModal = new Modal(this.$refs.modalPushData)
@@ -478,6 +486,11 @@ h4 {
     min-width: 6rem;
     width: max-content;
     height: 2rem
+}
+textarea{
+    background-color: rgb(0,0,0,0.5);
+    color: lightgray;
+    appearance: none;
 }
 </style>
 <template>
@@ -678,12 +691,12 @@ h4 {
                         data-bs-toggle="modal" data-bs-target="#modalAddToken">
                         Add token <i class="bi bi-plus-square-dotted"></i>
                     </button>
-                    <button v-if="!show_hidden_tokens" type="button" class="btn-h btn gap btn-outline-theme btn-sm"
-                        data-token="End" @click="show_hidden_tokens = true">
+                    <button v-if="!blueprint.show_hidden_tokens" type="button" class="btn-h btn gap btn-outline-theme btn-sm"
+                        data-token="End" @click="blueprint.show_hidden_tokens = true">
                         Show HD token <i class="bi bi-eye"></i>
                     </button>
                     <button type="button" v-else class="btn-h btn gap btn-outline-theme btn-sm" data-token="End"
-                        @click="show_hidden_tokens = false">
+                        @click="bluuprint.show_hidden_tokens = false">
                         Hide HD token <i class="bi bi-eye-slash"></i>
                     </button>
                     <button type="button" class="btn-h btn gap btn-outline-danger btn-sm" data-token="End"
@@ -698,11 +711,10 @@ h4 {
                         data-bs-toggle="modal" data-bs-target="#modalErrors">
                         Manage Errors <i class="bi bi-ban"></i>
                     </button>
-                    <a :href="'//dolph.app/portal/blueprints/?id=' + this.blueprint.blueprint" target="_blank">
-                        <button type="button" class="btn-h btn gap btn-outline-theme btn-sm" data-token="End">
+                    <button type="button" class="btn-h btn gap btn-outline-theme btn-sm" 
+                         data-bs-toggle="modal" data-bs-target="#modalTestDeploy" @click="testDeploy">
                             Test page <i class="bi bi-caret-right-square-fill"></i>
-                        </button>
-                    </a>
+                    </button>
 
                     <a :href="'//z-panel.io/portal/editor2/?page=' + this.blueprint.blueprint" target="_blank">
                         <button type="button" class="btn-h btn gap btn-outline-theme btn-sm" data-token="End">
@@ -1167,6 +1179,26 @@ h4 {
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-default" @click="closeModal">Close</button>
                     <button type="button" class="btn btn-outline-theme" @click="sendData">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalTestDeploy" ref="modalTestDeploy">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"> Deploying Test Page</h5>
+                    <button type="button" class="btn-close" @click="closeModal" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="col-12">
+                        <textarea class="w-100" style="resize:none;height:20vh" disabled>{{testDeployOutput}}</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-default" @click="closeModal">Close</button>
+                    <button type="button" class="btn btn-outline-theme" disabled>Show Page</button>
                 </div>
             </div>
         </div>

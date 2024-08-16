@@ -353,7 +353,7 @@ export default {
                             <div class="row row-space-10">
                                 <div class="col-8">
                                     <select class="script-select" v-model="selectedPageModel">
-                                        <option v-if="users" v-for="page in pages" :value="page.blueprint">{{ page.blueprint }}</option>
+                                        <option v-if="pages" v-for="page in pages" :value="page.blueprint">{{ page.blueprint }}</option>
                                         <option disabled v-if="!page" value="no pages"></option>
                                     </select>
                                 </div>

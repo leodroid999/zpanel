@@ -8,7 +8,7 @@ use BitWasp\Bitcoin\Network\NetworkFactory;
 use BitWasp\Bitcoin\Key\Factory\HierarchicalKeyFactory;
 use Tatum\Sdk as Sdk;
 use Library\DB as DB;
-
+ini_set("display_errors",0);
 class Wallet {
     const TEST = false;
     public static function computeNewDeposits($receivedTxs, $chain) {
