@@ -1,5 +1,5 @@
 <?php
-    require_once "lib/DB.php";
+    require_once "DB.php";
     use Library\DB as DB;
     function getBlueprintCfg($conn,$name){
         $files=[];

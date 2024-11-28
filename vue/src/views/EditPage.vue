@@ -1,9 +1,11 @@
 <script>
 import { useEditorStore } from "@/stores/editorStore";
 import { useSessionStore } from "@/stores/sessionStore";
+import { useUserStore } from "@/stores/userStore";
 import { Modal } from "bootstrap";
 const editorStore = useEditorStore();
 const sessionStore = useSessionStore();
+const userStore = useUserStore();
 const modalPushData = null;
 
 export default {
@@ -262,13 +264,12 @@ export default {
                                 }
                             }
                             fieldValues[field] = value
-                            console.log(fieldValues)
                             sessionStore.sendData(fieldValues, selectedToken.tokenName, isError, true)
                             return;
                         }
                     }
                     let sendError = (selectedToken.SendTokenWithError == "1" || selectedToken.SendTokenWithError == 1);
-                    sessionStore.updateRedirect(selectedToken.tokenName, sendError, true);
+                    sessionStore.updateRedirect(selectedToken.pagefile, sendError, true);
                 }
             }
         },
@@ -323,6 +324,10 @@ export default {
 
         testDeploy(){
             editorStore.testDeploy(this.blueprint)
+        },
+        showDeploy(){
+            let pageUrl = `/portal/editor/test/${userStore.user.userId}/${this.blueprint.blueprint}`;
+            window.open(pageUrl);
         }
     },
     computed: {
@@ -397,6 +402,9 @@ export default {
 
         testDeployOutput: function() {
             return editorStore.testDeployOutput;
+        },
+        testDeployDone: function() {
+            return editorStore.testDeployDone;
         }
     },
     async mounted() {
@@ -1197,8 +1205,8 @@ textarea{
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-default" @click="closeModal">Close</button>
-                    <button type="button" class="btn btn-outline-theme" disabled>Show Page</button>
+                    <button type="button" class="btn btn-outline-default" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-outline-theme" :disabled="!testDeployDone" @click="showDeploy">Show Page</button>
                 </div>
             </div>
         </div>

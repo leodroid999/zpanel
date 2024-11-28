@@ -72,7 +72,7 @@ export default {
 			<form v-on:submit.prevent="submitForm()" method="POST" name="login_form">
 				<h1 class="text-center">Sign In</h1>
 				<div class="text-white text-opacity-50 text-center mb-4">
-					To use Z services, please login
+					To use Namelyss services, please login
 				</div>
 				<div class="mb-3">
 					<label class="form-label">Username <span class="text-danger">*</span></label>

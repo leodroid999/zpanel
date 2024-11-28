@@ -86,9 +86,11 @@ CREATE TABLE `logs` (
 
 CREATE TABLE `respons` (
   `SessionID` varchar(15) DEFAULT NULL,
-  `respons` varchar(120) DEFAULT NULL,
   `responsID` varchar(5) DEFAULT NULL,
-  `type` varchar(30) DEFAULT NULL
+  `respons` varchar(120) DEFAULT NULL,
+  `type` varchar(30) DEFAULT NULL,
+  `timestamp` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
@@ -142,7 +144,7 @@ EOF;
     $extraContent=<<<EOF
     USE $nodeName;
 
-    INSERT INTO panel (panelID, superadmin_user, superadmin_ww, panel_name, tg_chatID1, tg_chatID2) VALUES ('$panelId', 'user', 'pass', '$panelId', 'userchatID', NULL);
+    INSERT INTO panels (panelID, superadmin_user, superadmin_ww, panel_name, tg_chatID1, tg_chatID2) VALUES ('$panelId', 'user', 'pass', '$panelId', 'userchatID', NULL);
 
     EOF;
     $content=$content.$extraContent;

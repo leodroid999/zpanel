@@ -41,7 +41,7 @@ let baseMenu = [
     icon: "bi bi-hdd-network",
     text: "My Panels",
   },
-  
+  /*
   {
     icon: "bi bi-shop",
     text: "Shop",
@@ -73,7 +73,7 @@ let baseMenu = [
       },
     ],
   },
-  
+  */
   {
     is_divider: true,
   },
@@ -81,18 +81,19 @@ let baseMenu = [
     text: "Users",
     is_header: true,
   },
-
+/*
   {
     url: "/wallet",
     icon: "bi bi-wallet",
     text: "Wallet",
   }, 
+*/ /*
   {
     url: "/order",
     icon: "fas fa-shopping-cart",
     text: "Order",
   },
-  
+  */
   /* {
       'url': '/info', 
       'icon': 'bi bi-info-lg',

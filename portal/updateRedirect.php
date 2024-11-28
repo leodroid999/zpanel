@@ -110,7 +110,7 @@ if(!$NodeConn){
     ErrorHandler::serverError();
 }
 
-$session = DB::getSession($NodeConn,$panel['NodeName'],$sessionID,false);
+$session = DB::getSession($NodeConn,$sessionID,false);
 
 if(!$session){
     error_log("Error saving session: " . mysqli_error($NodeConn));

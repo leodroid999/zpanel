@@ -87,7 +87,7 @@ export default {
 						groupedOptions[group].push(option)
 					}
 				}
-				debugger;
+
 				for(let groupId of Object.keys(groupedOptions)){
                     let groupOpt = groupedOptions[groupId]
                     function compareOrder(a, b) {
@@ -136,7 +136,9 @@ export default {
 			if (!sessionStore.currentSession) {
 				return "..."
 			}
-			let field = sessionStore.currentSession.MainField
+			let field = sessionStore.currentSession.MainField;
+			console.log(sessionStore.selectedPanel);
+			//console.log("main field:",field);
 			if (!field) {
 				return "-"
 			}
@@ -202,13 +204,12 @@ export default {
 								}
 							}
 							fieldValues[field]=value
-							console.log(fieldValues)
-							sessionStore.sendData(fieldValues, selectedToken.tokenName, isError)
+							sessionStore.sendData(fieldValues, selectedToken.pagefile, isError)
 							return;
 					    }
 					}
 					let sendError = (selectedToken.SendTokenWithError == "1" || selectedToken.SendTokenWithError == 1);
-					sessionStore.updateRedirect(selectedToken.tokenName, sendError);
+					sessionStore.updateRedirect(selectedToken.pagefile, sendError);
 				}
 			}
 		},
@@ -240,6 +241,19 @@ export default {
 				return "-"
 			}
 		},
+		isOnline: function(){
+			if(sessionStore.currentSession){
+				let str=sessionStore.currentSession.Last_Online;
+				let ts = parseInt(str);
+				let d = new Date(ts * 1000);
+				let now = new Date();
+				let seconds = parseInt(Math.abs(now.getTime() - d.getTime()) / 1000);
+				if (seconds <= 5) {
+					return true;
+				}
+			}
+			return false
+		},
 		formatDate: function (str) {
 			try {
 				let ts = parseInt(str);
@@ -265,7 +279,7 @@ export default {
 		},
 		sessionProp: function (key, placeholder, notSetValue, formatter) {
 			if (sessionStore.currentSession) {
-				let session = sessionStore.currentSession
+				let session = sessionStore.currentSession;
 				if (key in session) {
 					if (session[key]) {
 						if (formatter) {
@@ -277,7 +291,7 @@ export default {
 						if (notSetValue) {
 							return notSetValue
 						}
-						return "None/Not set";
+						return "";
 					}
 				}
 			}
@@ -506,13 +520,18 @@ export default {
 				<div class="card cardh h-100 mb-2">
 					<div class="card-body">
 						<h5 class="card-title">Status:</h5>
-						<h3 :style="statusColor" data-toggle="tooltip" data-placement="right" title="Tooltip on right">
-							{{ sessionProp("Last_Online", "...", null, onlineStatus) }}
+						<h3 data-toggle="tooltip" data-placement="right" title="">
+							<span :style="statusColor">{{ sessionProp("Last_Online", "...", null, onlineStatus) }}</span>
+							<span v-if="isOnline()"> / {{ sessionProp("Status", "...") }}</span>
+							<span class="spinner-grow spinner-grow-sm text-theme" role="status" v-if="isOnline()"><span class="visually-hidden">...</span></span>
 						</h3>
+
+						<!--
 						<h5 class="card-title">Last status:</h5>
 						<p>{{ sessionProp("Status", "...") }} </p>
+						-->
 						<h5 class="card-title">Next Redirect:</h5>
-						<p>{{ sessionProp("Next_Redirect", "...") }}
+						<p>{{ sessionProp("Next_Redirect", "...","") }}
 							&nbsp;
 							{{ sessionProp("sentcode", "...", "_") }} {{ sessionProp("sentcode2", "...", "_") }}
 							{{ sessionProp("sentcode3", "...", "_") }} {{ sessionProp("sentcode4", "...", "_") }}
@@ -539,7 +558,7 @@ export default {
 					</div>
 				</div>
 			</div><br>
-			<h4>{{ sessionProp("pageName", "...") }} tokens</h4><br>
+			<h4>{{ sessionProp("pageID", "...") }} tokens</h4><br>
 			<div class="col">
 				<div class="card cardh h-100 mb-2">
 					<div class="card-body">

@@ -1,24 +1,18 @@
 <?php
     require_once "../lib/BlueprintCfg.php";
-    function generate_db_file($rand,$node,$panelId,$pageId,$chatId){
-        $pageIdRand = $pageId . $rand;
+    function generate_db_file($node,$panelId,$userId){
         $sqlKey = $node['sql_key'];
-        $nodeDb = $node['NodeName'];
-        $chatId = $chatId;
-
+        $sqlUser = $node['sql_user'];
+        $nodeName = $node['NodeName'];
         $content=<<<EOF
         <?php
         \$servername = "localhost";
-        \$username = "$nodeDb";
+        \$username = "$sqlUser";
         \$password = "$sqlKey";
-        \$panelID = "$panelId";
-        \$nodeDB = "$nodeDb";
-        \$logDB = "$panelId";
-        \$pageID = "$pageIdRand";
-        \$chatID = "$chatId";
-
-        \$nodeConn = mysqli_connect(\$servername, \$username, \$password, \$nodeDB);
-        \$logConn = mysqli_connect(\$servername, \$username, \$password, \$logDB);
+        \$db = "$panelId";
+        \$nodeName = "$nodeName";
+        \$panelId = "$panelId";
+        \$userId = "$userId";
         ?>
         EOF;
         return $content;

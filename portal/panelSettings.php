@@ -61,20 +61,15 @@ if(!$node){
     ErrorHandler::serverError();
 }
 $node = $node[0];
-
 $nodeHost = $node['nodeId'];
 $sql_user = $node['sql_user'];
 $nodeSQLUser =  $sql_user ? $sql_user : $node['NodeName'];
 $nodeSQLPass = $node['sql_key'];
-$panelDB = $panel['panelId'];
-// Connecting to the Node
+$panelDB = $node['NodeName'];
+
 $NodeConn = new mysqli($nodeHost, $nodeSQLUser, $nodeSQLPass, $panelDB);
 
-if(!$NodeConn){
-    ErrorHandler::serverError();
-}
-
-$settings=DB::getPanelSettings($NodeConn,$node["NodeName"],$panelID);
+$settings=DB::getPanelSettings($NodeConn,$panelID);
 if(!isset($settings)){
     error_log("Error loading panel settings: " . mysqli_error($NodeConn));
     ErrorHandler::serverError();

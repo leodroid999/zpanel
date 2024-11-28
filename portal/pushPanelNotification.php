@@ -12,7 +12,7 @@ $panelId = $_POST['panelId'];
 $content = $_POST['content'];
 
 function sendMessage($chatID,$content){
-    $botToken = '6636627040:AAE_pLLKcpRpotS90TcV3_8zVFifoV2EwJ0';
+    $botToken = '7924767611:AAExdMrywUPKpVIBWMowG_gmm_pmREg50kQ';
     $apiURL = "https://api.telegram.org/bot$botToken/sendMessage";
     $data = array(
         'chat_id' => $chatID,
@@ -58,7 +58,7 @@ $chatID = $panel['chatID'];
 // send message to owner
 sendMessage($chatID,$content);
 // get users with access to panel and send message
-$users=DB::getPanelAccessList($conn,$panelId);
+$users=DB::getPanelAccessList($conn,$panelId,$nodeName);
 if($users != null && count($users)>0){
     foreach ($users as &$user) {
         $userChatID = $user['chatID'];

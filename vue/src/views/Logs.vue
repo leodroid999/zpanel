@@ -21,6 +21,8 @@
         ScrollSpy
     } from 'bootstrap';
 
+    import 'flag-icons/css/flag-icons.min.css';
+
     const sessionStore = useSessionStore();
     const appOption = useAppOptionStore();
 
@@ -95,7 +97,7 @@
                             }
                             let rowCountry = "?";
                             if (row.country) {
-                                rowCountry = row.country
+                                rowCountry = '<span class="fi fi-' + row.country.toLowerCase() + '"></span>'; 
                             }
                             return (
                                 "" + rowCountry + " / " + osIcon + " / " + isp

@@ -563,6 +563,9 @@ export const useEditorStore = defineStore({
         let curr_index = xhr.responseText.length;
         if (last_index == curr_index) return; 
         let newData = xhr.responseText.substring(last_index, curr_index);
+        if(newData.includes("Done")){
+          this.testDeployDone = true;
+        }
         this.testDeployOutput += newData.replace(/(<([^>]+)>)/gi, "");
         last_index = curr_index;
       };

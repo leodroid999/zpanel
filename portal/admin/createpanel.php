@@ -10,11 +10,10 @@ require_once "lib/Util.php";
 require_once "lib/CMD.php";
 require_once "lib/ErrorHandler.php";
 require_once "$filesDir/server_config.php";
-require_once "$filesDir/index.php";
-require_once "$filesDir/config.php";
 require_once "$filesDir/setup.sh.php";
 require_once "$filesDir/setup.sql.php";
 require_once "$filesDir/db.php";
+require_once "$filesDir/config.php";
 include "lib/cors.php";
 include "lib/authcheck.php";
 $nodeId = $_POST['nodeId'];
@@ -75,16 +74,6 @@ function CreatePanel($filesDir,$nodeId, $panelId, $userId)
             "generate"=>'generate_server_config'
         ),
         array(
-            "name"=>"index.php",
-            "target"=>"/var/www/html/$panelId/index.php",
-            "generate"=>'generate_index_file'
-        ),
-        array(
-            "name"=>"config.php",
-            "target"=>"/var/www/html/$panelId/config.php",
-            "generate"=>'generate_config'
-        ),
-        array(
             "name"=>"setup.sh",
             "target"=>"/var/www/html/$panelId/setup.sh",
             "generate"=>'generate_setup_sh'
@@ -93,6 +82,11 @@ function CreatePanel($filesDir,$nodeId, $panelId, $userId)
             "name"=>"setup.sql",
             "target"=>"/var/www/html/$panelId/setup.sql",
             "generate"=>'generate_setup_sql'
+        ),
+        array(
+            "name"=>"config.php",
+            "target"=>"/var/www/html/$panelId/config.php",
+            "generate"=>'generate_config_php'
         )
     );
 
@@ -120,7 +114,7 @@ function CreatePanel($filesDir,$nodeId, $panelId, $userId)
         Util::output_line("error generating config");
         return;
     }
-    $content=generate_db_file($rand,$node,$panelId,$pageId,$user['chatID']);
+    $content=generate_db_file($node,$panelId,$userId);
     
     if(!$content){
         Util::output_line("Error generating db config file");
@@ -132,7 +126,7 @@ function CreatePanel($filesDir,$nodeId, $panelId, $userId)
         Util::output_line("Error generating db config file");
         return;
     }
-    $dbFileTarget="/var/www/html/$panelId/db.php";
+    $dbFileTarget="/var/www/html/$panelId/db_cfg.php";
     
             
     Util::output_line("Connecting to server");

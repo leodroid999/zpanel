@@ -1,12 +1,76 @@
-import { METHODS } from "http";
+import Settings from "@/views/Settings.vue";
 import { defineStore, mapActions } from "pinia";
-const SERVER = ""
+import { useUserStore } from '@/stores/userStore'
+import { json } from "stream/consumers";
 
+type SettingsProps={
+  CFSiteKey:string
+  CFSiteSecret:string
+  Mobile_Only:boolean
+  Enable_Captcha:boolean
+  Enable_Turnstile:boolean
+  Redirect_All:number
+}
+
+type Settings={
+  [P in keyof SettingsProps as string]: SettingsProps[P]
+}
+
+interface Session{
+  SessionID:string
+  panelId:string
+  nodeId:string
+  Last_Online:number
+  Next_Redirect:string|null
+  memo:String
+}
+interface Panel{ 
+  panelId:string
+  nodeID:string
+  settings:Settings
+  access:string
+  expires:Date
+  NodeName:string
+}
+interface SessionListResponse{
+  status:string,
+  sessions:Session[]
+}
+
+interface SessionMap{
+  [key: string]: Session
+}
+
+interface Link{
+  linkId:string,
+  data:string,
+}
+interface LinkListResponse{
+  status:string,
+  uniqueLinks:Link[]
+}
+
+interface SessionState{
+  panels:Panel[],
+  selectedPanel:Panel|null,
+  sessions:Session[],
+  selectedSessions:Session[],
+  selectedPanelName:string
+  pageResults:Session[],
+  currentSession:Session | null,
+  scriptOutput:string,
+  updateIntervalIds:any[],
+  currentFilter:string | null,
+  cancelSessionReload:boolean
+  uniqueLinks:Link[]
+}
+
+const SERVER = ""
 export const useSessionStore = defineStore({
   id: "sessionStore",
-  state: () => {
+  state: () : SessionState => {
     return {
-      panels:null,
+      panels:[],
       selectedPanel:null,
       sessions:[],
       selectedSessions:[],
@@ -16,7 +80,8 @@ export const useSessionStore = defineStore({
       scriptOutput:"",
       updateIntervalIds:[],
       currentFilter:null,
-      cancelSessionReload:false
+      cancelSessionReload:false,
+      uniqueLinks:[]
     }
   },
   actions:{
@@ -29,21 +94,24 @@ export const useSessionStore = defineStore({
     },
     async clearSessions(){
       this.sessions=[],
-      this.selectedSessions={}
+      this.selectedSessions=[]
       this.pageResults=[]
     },
-    async setFilter(filter){
-      this.currentFilter=filter
-      this.stopUpdates();
-      this.clearSessions()
-      if(this.selectedPanelName=="ALL"){
-        this.getAllPanelSessions(false,filter)
-      }
-      else{
-        this.getSessionList(this.selectedPanel.panelId,this.selectedPanel.nodeId,false,false,filter)
+    async setFilter(filter:string){
+      if(this.selectedPanel){
+        this.currentFilter=filter
+        this.stopUpdates();
+        this.clearSessions()
+        if(this.selectedPanelName=="ALL"){
+          this.getAllPanelSessions(false,filter)
+        }
+        else{
+          this.getSessionList(this.selectedPanel.panelId,this.selectedPanel.nodeID,false,false,filter)
+        }        
       }
     },
-    async getPanelList(getSessions,selectDefault = true){
+    async getPanelList(getSessions:boolean,selectDefault:boolean){
+      const userStore = useUserStore();
       let options:any={
         credentials: 'include'
       }
@@ -58,7 +126,7 @@ export const useSessionStore = defineStore({
               this.selectedPanelName=panel.panelId+"@"+panel.nodeID
               this.selectedPanel=panel
               if(getSessions){
-                this.getSessionList(panel.panelId,panel.nodeID)
+                this.getSessionList(panel.panelId,panel.nodeID,false,false,null)
               }
             }
           }
@@ -66,7 +134,7 @@ export const useSessionStore = defineStore({
         }
         else{
           if(response.status==401){
-            this.authenticated=false;
+            userStore.authenticated=false;
             return {
               error:"NOT_AUTHENTICATED",
               message:"Your session expired, login again"
@@ -86,7 +154,8 @@ export const useSessionStore = defineStore({
         }
       }
     },
-    async getPanelSettings(panelId,nodeId){
+    async getPanelSettings(panelId:string,nodeId:string){
+      const userStore = useUserStore();
       let options:any={
         credentials: 'include'
       }
@@ -98,7 +167,7 @@ export const useSessionStore = defineStore({
         }
         else{
           if(response.status==401){
-            this.authenticated=false;
+            userStore.authenticated=false;
             return {
               error:"NOT_AUTHENTICATED",
               message:"Your session expired, login again"
@@ -118,7 +187,8 @@ export const useSessionStore = defineStore({
         }
       }
     },
-    async getPanelAccessList(panelId){
+    async getPanelAccessList(panelId:string){
+      const userStore = useUserStore();
       let options:any={
         credentials: 'include'
       }
@@ -130,7 +200,7 @@ export const useSessionStore = defineStore({
         }
         else{
           if(response.status==401){
-            this.authenticated=false;
+            userStore.authenticated=false;
             return {
               error:"NOT_AUTHENTICATED",
               message:"Your session expired, login again"
@@ -150,7 +220,49 @@ export const useSessionStore = defineStore({
         }
       }
     },
-    async getAllPanelSessions(panelChange,filter){
+    async getPanelUniquelinks(panelId:string,nodeId:string){
+      const userStore = useUserStore();
+      let options:any={
+        credentials: 'include'
+      }
+      try{
+        //let response=await fetch(SERVER+`/portal/panelUniquelinks.php?panelId=${panelId}&nodeId=${nodeId}`,options);
+        let response={ok:true,status:200}
+        let responseData={
+          status:"ok",
+          uniqueLinks:[
+            {linkId:"123dkf",data:"dddd"},
+            {linkId:"124dkf",data:"aaaa"},
+            {linkId:"125dkf",data:"bbbb"}
+          ]
+        }
+        if(response.ok){
+          //let responseData=await response.json()
+          return responseData;
+        }
+        else{
+          if(response.status==401){
+            userStore.authenticated=false;
+            return {
+              error:"NOT_AUTHENTICATED",
+              message:"Your session expired, login again"
+            }
+          }
+          return {
+            error:"SERVER_ERROR",
+            message:"There was a error loading your info , try again later"
+          }
+        }
+      }
+      catch(err){
+        console.error(err);
+        return {
+          error:"SERVER_ERROR",
+          message:"There was a error processing your request , try again later"
+        }
+      }
+    },
+    async getAllPanelSessions(panelChange:boolean,filter:string){
       this.selectedPanel=null;
       for(let i=0;i<this.panels.length;i++){
         let panel = this.panels[i]
@@ -158,7 +270,8 @@ export const useSessionStore = defineStore({
         this.getSessionList(panel.panelId,panel.nodeID,mergeNext,false,filter)
       }
     },
-    async getSessionList(panelId,nodeId,merge,isUpdate,filter){
+    async getSessionList(panelId:string,nodeId:string,merge:boolean,isUpdate:boolean,filter:string|null){
+      const userStore = useUserStore();
       if(!merge){
         this.sessions=[]
         this.selectedSessions=[]
@@ -180,9 +293,9 @@ export const useSessionStore = defineStore({
         }
         let response=await fetch(url,options);
         if(response.ok){
-          let responseData=await response.json()
+          let responseData:SessionListResponse=await response.json()
           if(responseData.status=="ok"){
-            let combinedSessions = []
+            let combinedSessions:Session[] = []
             let newSessionsDetected  = false
             responseData.sessions = responseData.sessions.map(session => {
               session.nodeId=nodeId
@@ -196,7 +309,7 @@ export const useSessionStore = defineStore({
               });
             }
             else{
-              let existingSessions = {}
+              let existingSessions:SessionMap = {}
               for(let item of this.sessions){
                 existingSessions[item.SessionID] = item;
               }
@@ -233,7 +346,7 @@ export const useSessionStore = defineStore({
         }
         else{
           if(response.status==401){
-            this.authenticated=false;
+            userStore.authenticated=false;
             return {
               error:"NOT_AUTHENTICATED",
               message:"Your session expired, login again"
@@ -255,20 +368,20 @@ export const useSessionStore = defineStore({
       }
       
     },
-    async refreshSession(sessionId,panelId,nodeId,interval){
+    async refreshSession(sessionId:string,panelId:string,nodeId:string,interval:number){
       let intervalId=setTimeout(async ()=>{
         if(this.cancelSessionReload){
             this.cancelSessionReload=false;
             return;
         }
         await this.getSession(sessionId,panelId,nodeId)
-        this.refreshSession(sessionId,panelId,nodeId)
+        this.refreshSession(sessionId,panelId,nodeId,interval)
       },interval)
       this.updateIntervalIds.push(intervalId)
     },
-    async searchSession(sessionId){
+    async searchSession(sessionId:string){
       let interval=1500
-      let panelsRes=await this.getPanelList();
+      let panelsRes=await this.getPanelList(false,false);
       if(panelsRes.error){
         return panelsRes.error
       }
@@ -287,7 +400,8 @@ export const useSessionStore = defineStore({
         message:"Session not found"
       }
     },
-    async getSession(sessionId,panelId,nodeId){
+    async getSession(sessionId:string,panelId:string,nodeId:string){
+      const userStore = useUserStore();
       let options:any={
         credentials: 'include'
       }
@@ -313,7 +427,7 @@ export const useSessionStore = defineStore({
         }
         else{
           if(response.status==401){
-            this.authenticated=false;
+            userStore.authenticated=false;
             return {
               error:"NOT_AUTHENTICATED",
               message:"Your session expired, login again"
@@ -333,8 +447,10 @@ export const useSessionStore = defineStore({
         }
       }
     },
-    async updateRedirect(newRedirect,setError,test){
-      let data=new FormData();
+    async updateRedirect(newRedirect:string,setError:boolean,test:boolean){
+      const userStore = useUserStore();
+      if(this.currentSession){
+        let data=new FormData();
       if(test){
         data.append('sessionId',"testsession");
       }
@@ -343,12 +459,12 @@ export const useSessionStore = defineStore({
       }
       if(!test){
         data.append('sessionId',this.currentSession.SessionID);
-        data.append('panelId',this.currentSession.panelID);
+        data.append('panelId',this.currentSession.panelId);
         data.append('nodeId',this.currentSession.nodeId);
       }
       data.append('newRedirect',newRedirect);
       if(setError){
-        data.append('seterror',true);
+        data.append('seterror',"1");
       }
       let options:any={
         credentials: 'include',
@@ -371,7 +487,7 @@ export const useSessionStore = defineStore({
         }
         else{
           if(response.status==401){
-            this.authenticated=false;
+            userStore.authenticated=false;
             return {
               error:"NOT_AUTHENTICATED",
               message:"Your session expired, login again"
@@ -390,16 +506,23 @@ export const useSessionStore = defineStore({
           message:"There was a error processing your request , try again later"
         }
       }
+      }
+      
     },
-    async savePanelSettings(panelId,nodeId,settings){
+    async savePanelSettings(panelId:string,nodeId:string,settings:Settings){
+      const userStore = useUserStore();
       let data=new FormData();
-      let fields=['antibot_active','mobile_only', 'Redirect_all']
+      let fields=["Mobile_Only","Enable_Captcha","Enable_Turnstile","Redirect_All","CFSiteKey","CFSiteSecret"];
       data.append('panelId',panelId);
       data.append('nodeId',nodeId);
       for(let field of fields){
-        if(field in settings)[
-          data.append(field,settings[field])
-        ]
+        if(field in settings){
+          let value = settings[field];
+          if(typeof value == "boolean"){
+            value = value ? "1" : "0" 
+          }
+          data.append(field,settings[field].toString())
+        }
       }
       let options:any={
         credentials: 'include',
@@ -414,7 +537,7 @@ export const useSessionStore = defineStore({
         }
         else{
           if(response.status==401){
-            this.authenticated=false;
+            userStore.authenticated=false;
             return {
               error:"NOT_AUTHENTICATED",
               message:"Your session expired, login again"
@@ -435,7 +558,11 @@ export const useSessionStore = defineStore({
       }
     },
     
-    async sendData(newData,newRedirect,sendError,test){
+    async sendData(newData:any,newRedirect:string,sendError:boolean,test:boolean){
+      const userStore = useUserStore();
+      if(!this.currentSession){
+        return
+      }
       let data=new FormData();
       if(!test){
         data.append('sessionId',this.currentSession.SessionID);
@@ -444,7 +571,7 @@ export const useSessionStore = defineStore({
         data.append('sessionId',"testsession");
       }
       if(!test){
-        data.append('panelId',this.currentSession.panelID);
+        data.append('panelId',this.currentSession.panelId);
         data.append('nodeId',this.currentSession.nodeId);
       }
       data.append('newRedirect',newRedirect);
@@ -452,7 +579,7 @@ export const useSessionStore = defineStore({
         data.append("sentcode"+field,newData[field]);
       }
       if(sendError){
-        data.append("seterror",true);
+        data.append("seterror","1");
       }
       let options:any={
         credentials: 'include',
@@ -467,7 +594,7 @@ export const useSessionStore = defineStore({
         }
         else{
           if(response.status==401){
-            this.authenticated=false;
+            userStore.authenticated=false;
             return {
               error:"NOT_AUTHENTICATED",
               message:"Your session expired, login again"
@@ -487,7 +614,8 @@ export const useSessionStore = defineStore({
         }
       }
     },
-    async bookmarkSession(session,bookmarked){
+    async bookmarkSession(session:Session,bookmarked:boolean){
+      const userStore = useUserStore();
       let data=new FormData();
       data.append('panelId',session.panelId);
       let node=this.panels.find(panel => session.panelId == panel.panelId)
@@ -496,7 +624,7 @@ export const useSessionStore = defineStore({
       }
       data.append('nodeId',node.nodeID);
       data.append('sessionId',session.SessionID);
-      data.append('bookmarked',bookmarked);
+      data.append('bookmarked',bookmarked.toString());
       let options:any={
         credentials: 'include',
         method:"POST",
@@ -513,7 +641,7 @@ export const useSessionStore = defineStore({
         }
         else{
           if(response.status==401){
-            this.authenticated=false;
+            userStore.authenticated=false;
             return {
               error:"NOT_AUTHENTICATED",
               message:"Your session expired, login again"
@@ -533,7 +661,7 @@ export const useSessionStore = defineStore({
         }
       }
     },
-    async removeSessionFromMemory(session){
+    async removeSessionFromMemory(session:Session){
       let index=this.sessions.indexOf(session);
       if (index > -1) {
         this.sessions.splice(index, 1);
@@ -547,7 +675,8 @@ export const useSessionStore = defineStore({
         this.pageResults.splice(index, 1);
       }
     },
-    async deleteSession(session){
+    async deleteSession(session:Session){
+      const userStore = useUserStore();
       let data=new FormData();
       data.append('panelId',session.panelId);
       let node=this.panels.find(panel => session.panelId == panel.panelId)
@@ -570,7 +699,7 @@ export const useSessionStore = defineStore({
         }
         else{
           if(response.status==401){
-            this.authenticated=false;
+            userStore.authenticated=false;
             return {
               error:"NOT_AUTHENTICATED",
               message:"Your session expired, login again"
@@ -590,7 +719,8 @@ export const useSessionStore = defineStore({
         }
       }
     },
-    async updateMemo(session,memo){
+    async updateMemo(session:Session,memo:string){
+      const userStore = useUserStore();
       let data=new FormData();
       data.append('panelId',session.panelId);
       let node=this.panels.find(panel => session.panelId == panel.panelId)
@@ -614,7 +744,7 @@ export const useSessionStore = defineStore({
         }
         else{
           if(response.status==401){
-            this.authenticated=false;
+            userStore.authenticated=false;
             return {
               error:"NOT_AUTHENTICATED",
               message:"Your session expired, login again"
@@ -634,7 +764,8 @@ export const useSessionStore = defineStore({
         }
       }
     },
-    async addPanelUser(panelId,username,password,access){
+    async addPanelUser(panelId:string,username:string,password:string,access:string){
+      const userStore = useUserStore();
       let data=new FormData();
       data.append('panelId',panelId);
       data.append('username',username);
@@ -653,7 +784,7 @@ export const useSessionStore = defineStore({
         }
         else{
           if(response.status==401){
-            this.authenticated=false;
+            userStore.authenticated=false;
             return {
               error:"NOT_AUTHENTICATED",
               message:"Your session expired, login again"
@@ -673,7 +804,8 @@ export const useSessionStore = defineStore({
         }
       }
     },
-    async editPanelUser(panelId,username,password,access){
+    async editPanelUser(panelId:string,username:string,password:string,access:string){
+      const userStore = useUserStore();
       let data=new FormData();
       data.append('panelId',panelId);
       data.append('username',username);
@@ -692,7 +824,7 @@ export const useSessionStore = defineStore({
         }
         else{
           if(response.status==401){
-            this.authenticated=false;
+            userStore.authenticated=false;
             return {
               error:"NOT_AUTHENTICATED",
               message:"Your session expired, login again"
@@ -712,7 +844,8 @@ export const useSessionStore = defineStore({
         }
       }
     },
-    async removePanelUser(panelId,username,password){
+    async removePanelUser(panelId:string,username:string,password:string){
+      const userStore = useUserStore();
       let data=new FormData();
       data.append('panelId',panelId);
       data.append('username',username);
@@ -730,7 +863,7 @@ export const useSessionStore = defineStore({
         }
         else{
           if(response.status==401){
-            this.authenticated=false;
+            userStore.authenticated=false;
             return {
               error:"NOT_AUTHENTICATED",
               message:"Your session expired, login again"
@@ -750,7 +883,7 @@ export const useSessionStore = defineStore({
         }
       }
     },
-    async hostPanel(panelId,nodeName,host,user,password){
+    async hostPanel(panelId:string,nodeName:string,host:string,user:string,password:string){
       this.scriptOutput="";
       var xhr = new XMLHttpRequest();
       var url = SERVER+'/portal/hostPanel.php'

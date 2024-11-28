@@ -25,7 +25,7 @@ if (!$user) {
   error_log("Error loading user data: " . mysqli_error($conn));
   ErrorHandler::authError();
 }
-$blueprints = DB::getBlueprints($conn);
+$blueprints = DB::getBlueprints($conn,$userID);
 if (!$blueprints) {
   error_log("Error loading blueprints info: " . mysqli_error($conn));
   ErrorHandler::serverError();

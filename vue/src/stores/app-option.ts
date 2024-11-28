@@ -13,6 +13,7 @@ export const useAppOptionStore = defineStore({
 			appSidebarCollapsed: false,
 			appSidebarMobileToggled: false,
 			appSidebarMobileClosed: false,
+			appSidebarToggled: false,
 			appSidebarHide: false,
 			appContentFullHeight: false,
 			appContentClass: '',

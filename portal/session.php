@@ -75,12 +75,11 @@ $nodeSQLUser =  $sql_user ? $sql_user : $node['NodeName'];
 $nodeSQLPass = $node['sql_key'];
 $panelDB = $panel['panelId'];
 $NodeConn = new mysqli($nodeHost, $nodeSQLUser, $nodeSQLPass, $panelDB);
-
 if(!$NodeConn){
     ErrorHandler::serverError();
 }
 $getPageTable = DB::checkPageTableExists($NodeConn,$node['NodeName']);
-$session = DB::getSession($NodeConn,$node['NodeName'],$sessionID,$getPageTable);
+$session = DB::getSession($NodeConn,$sessionID);
 if(!isset($session)){
     error_log("Error loading session list: " . mysqli_error($NodeConn));
     ErrorHandler::serverError();
@@ -98,9 +97,13 @@ else{
     if($responses){
         $session["responses"]=$responses;
     }
-    $options = DB::getOptions($NodeConn,$panel['NodeName'],$session['pageID']);
+    $options = DB::getOptions($conn,$session['pageID']);
     if($options){
         $session["options"]=$options;
+    }
+    $blueprint=DB::getBlueprint($conn, $session['pageID']);
+    if($blueprint){
+        $session["MainField"]=$blueprint[0]["MainField"];
     }
     echo json_encode(array(
         "status"=>"ok",

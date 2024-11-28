@@ -5,9 +5,7 @@
     require_once "lib/CMD.php";
 
     require_once "panel_files/db.php";
-    require_once "panel_files/registerPage.sql.php";
-    require_once "panel_files/createTokens.sql.php";
-    require_once "panel_files/createPhpFile.php";
+    require_once "panel_files/generatePageFile.php";
     require_once "panel_files/generateStartPage.php";
     require_once "panel_files/_pageCfg.php";
 
@@ -24,7 +22,6 @@
     $folderName = $_POST['folderName'];
    
     function DeployPage($nodeId, $panelId, $pageId,$folderName){
-        $rand = mt_rand(1, 99999999);
 
         Util::output_line("Deploying page $pageId for $panelId @ node $nodeId");
         $conn=DB::connect();
@@ -44,10 +41,15 @@
             return;
         }
         $page=$page[0];
-
+        var_dump($folderName);
+        if(!isset($folderName) || $folderName == "null"){
+            $folderName="";
+        }
+        $baseTargetDir = "/var/www/html/$panelId";
         $targetDir="/var/www/html/$panelId/$folderName";
+        $targetDir=str_replace("//","/",$targetDir);
 
-        Util::output_line("Generating db config file");
+        Util::output_line("Generating page config file");
         $userID = $_SESSION['userID'];
         if(!isset($userID)){
             ErrorHandler::authError();
@@ -60,77 +62,21 @@
             Util::output_line("Error getting account info");
         }
 
-        $content=generate_db_file($rand,$node,$panelId,$pageId,$user['chatID']);
+        $content=generate_page_file($pageId);
         if(!$content){
-            Util::output_line("Error generating db config file");
+            Util::output_line("Error generating page config file");
             return;
         }
-        $dbFileSrc=FS::create_tempfile($content,"db");
-        if(!$dbFileSrc){
-            Util::output_line("Error generating db config file");
+        $pageCfgFileSrc=FS::create_tempfile($content,"page");
+        if(!$pageCfgFileSrc){
+            Util::output_line("Error generating page config file");
             return;
         }
-        $dbFileTarget="$targetDir/db.php";
+        $pageCfgFileTarget="$baseTargetDir/page.php";
 
-        
-        Util::output_line("Generating  registerPage.sql");
-
-        $registerPageSql=generate_register_page($conn,$rand,$pageId,$panelId);
-        if(!$registerPageSql){
-            Util::output_line("Error generating registerPage.sql file");
-            return;
-        }
-
-        $registerPageFileSrc=FS::create_tempfile($registerPageSql,"regpage");
-        if(!$registerPageFileSrc){
-            Util::output_line("Error generating registerPage.sql file");
-            return;
-        }
-
-        $registerPageFileTarget="$targetDir/registerPage.sql";
-
-        Util::output_line("Generating createToken.sql");
-        $generateTokenResult=generate_create_tokens($conn,$rand,$pageId,$panelId);
-        if(!$generateTokenResult){
-            Util::output_line("Error generating createTokens.sql file");
-            return;
-        }
-        $content=$generateTokenResult['content'];
-        $tokens=$generateTokenResult['tokens'];
-
-
-        $createTokensFileSrc=FS::create_tempfile($content,"tokenreg");
-        if(!$createTokensFileSrc){
-            Util::output_line("Error generating createTokens.sql file");
-            return;
-        }
-
-        $createTokensFileTarget="$targetDir/createTokens.sql";
-
-        $phpFiles=[];
-
-        $pageIdRand = $pageId . $rand;
-        foreach(array_keys($tokens) as $fileName){
-            $fileToken=$tokens[$fileName];
-            $fileContent=generate_php_file($fileToken,$pageIdRand);
-            if(!$fileContent){
-                Util::output_line("Error generating php files");
-                return;
-            }
-
-            $fileSrc=FS::create_tempfile($fileContent,"pagefile");
-            if(!$fileSrc){
-                Util::output_line("Error generating php files");
-                return;
-            }
-            $fileNamePhp=str_replace("html","php",$fileName);
-            $fileDst="$targetDir/$fileNamePhp";
-            $entry=[
-                'src'=>$fileSrc,
-                "dst"=>$fileDst
-            ];
-            array_push($phpFiles,$entry);
-        }
+        $siteCfg=getBluePrintCfg($conn,$pageId);
+        $files  = $siteCfg["files"];
+        $params  = $siteCfg["params"];
 
         Util::output_line("Connecting to server");
         $ssh_conn=CMD::connect_ssh($nodeId,$node['server_user'],$node["server_password"]);
@@ -148,8 +94,8 @@
                 return;
             }
         }
-        $baseSrc="/data/fixedbackend.zip";
-        $baseTarget="$targetDir/base.zip";
+        $baseSrc="/data/newfixedbe.zip";
+        $baseTarget="$baseTargetDir/base.zip";
         $pageFilename=$page['assetDir'];
         $pageSrc="/data/$pageFilename.zip";
         $pageTarget="$targetDir/$pageFilename.zip";
@@ -166,22 +112,8 @@
             return;
         }
 
-        Util::output_line("uploading $dbFileTarget");
-        $uploadDone=FS::upload_file($sftp,$dbFileSrc,$dbFileTarget);
-        if(!$uploadDone){
-            Util::output_line("File upload failed");
-            return;
-        }
-
-        Util::output_line("uploading $registerPageFileTarget");
-        $uploadDone=FS::upload_file($sftp,$registerPageFileSrc,$registerPageFileTarget);
-        if(!$uploadDone){
-            Util::output_line("File upload failed");
-            return;
-        }
-
-        Util::output_line("uploading $createTokensFileTarget");
-        $uploadDone=FS::upload_file($sftp,$createTokensFileSrc,$createTokensFileTarget);
+        Util::output_line("uploading $pageCfgFileTarget");
+        $uploadDone=FS::upload_file($sftp,$pageCfgFileSrc,$pageCfgFileTarget);
         if(!$uploadDone){
             Util::output_line("File upload failed");
             return;
@@ -190,45 +122,15 @@
         Util::output_line("extracting..");
         CMD::run_cmd($ssh_conn,"apt install unzip");
         Util::output_line("extracting base files..");
-        $extractBaseCmd="unzip -o $baseTarget -d $targetDir";
+        $extractBaseCmd="unzip -o $baseTarget -d $baseTargetDir";
         CMD::run_cmd($ssh_conn,"$extractBaseCmd");
 
-        Util::output_line("extracting page files..");
+        Util::output_line("extracting panel files..");
         $extractPageCmd="unzip -o $pageTarget -d $targetDir";
         CMD::run_cmd($ssh_conn,"$extractPageCmd");
 
-        // upload php files with tokens with
-        Util::output_line("uploading php files..");
-
-        $ssh_conn2=CMD::connect_ssh($nodeId,$node['server_user'],$node["server_password"]);
-        if(!$ssh_conn){
-            Util::output_line("error uploading php files..");
-            return;
-        }
-        $sftp2=ssh2_sftp($ssh_conn2);
-
-        foreach($phpFiles as $file){
-            $src=$file['src'];
-            $target=$file['dst'];
-            Util::output_line("uploading $target");
-            $uploadDone=FS::upload_file($sftp2,$src,$target);
-            if(!$uploadDone){
-                Util::output_line("File upload failed");
-                return;
-            }
-        }
-
         CMD::run_cmd($ssh_conn,"rm $baseTarget");
         CMD::run_cmd($ssh_conn,"rm $pageTarget");
-
-        Util::output_line("registering page deployment..");
-        $nodeName = $node['NodeName'];
-        $registerPageCmd="mysql $nodeName < $registerPageFileTarget";
-        CMD::run_cmd($ssh_conn,$registerPageCmd);
-
-        Util::output_line("creating tokens..");
-        $createTokensCmd="mysql $nodeName < $createTokensFileTarget";
-        CMD::run_cmd($ssh_conn,$createTokensCmd);
 
         Util::output_line("Done.");
    }

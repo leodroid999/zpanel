@@ -62,19 +62,19 @@ if($panel){
     $panel=$panel[0];
 }
 
-$nodeHost = $panel['nodeId'];
-$sql_user = $panel['sql_user'];
-$nodeSQLUser =  $sql_user ? $sql_user : $node['NodeName'];
-$nodeSQLPass = $panel['sql_key'];
-$panelDB = $panel['panelId'];
-
-// Connecting to the Node
-$NodeConn = new mysqli($nodeHost, $nodeSQLUser, $nodeSQLPass, $panelDB);
-
-if(!$NodeConn){
+$node = DB::getNodeById($conn,$panel["nodeId"]);
+if(!$node){
     ErrorHandler::serverError();
 }
-$settings=DB::getPanelSettings($NodeConn,$node['NodeName'],$panelID);
+$node = $node[0];
+$nodeHost = $node['nodeId'];
+$sql_user = $node['sql_user'];
+$nodeSQLUser =  $sql_user ? $sql_user : $node['NodeName'];
+$nodeSQLPass = $node['sql_key'];
+$panelDB = $node['NodeName'];
+$NodeConn = new mysqli($nodeHost, $nodeSQLUser, $nodeSQLPass, $panelDB);
+
+$settings=DB::getPanelSettings($NodeConn,$panelID);
 if(!$settings){
     ErrorHandler::serverError();
 }
@@ -82,27 +82,21 @@ if($settings){
     $settings=$settings[0];
 }
 
-if(isset($_POST['antibot_active'])){
-    $settings['antibot_active']=$_POST['antibot_active'] ? 1 : 0;
+$availableSettings=["Mobile_Only","Enable_Captcha","Enable_Turnstile","Redirect_All","CFSiteKey","CFSiteSecret"];
+$newSettings=[];
+foreach($availableSettings as $settingname){
+    if(isset($_POST[$settingname])){
+        $newSettings[$settingname] = $_POST[$settingname];
+    }
 }
-
-if(isset($_POST['mobile_only'])){
-    $settings['mobile_only']=$_POST['mobile_only'] ? 1 : 0;
-}
-
-if(isset($_POST['Redirect_all'])){
-    $settings['Redirect_all']=$_POST['Redirect_all'] == "true" ? 1 : 0;
-}
-
-
-$saved=DB::savePanelSettings($NodeConn,$node['NodeName'],$panelID, $settings['antibot_active'], $settings['mobile_only'], $settings['Redirect_all']);
+$saved=DB::savePanelSettings($NodeConn,$panelID,$newSettings);
 if($saved){
     echo json_encode(array(
         "status"=>"ok",
     ));
 }
 else{
-    error_log("Error updating redirect : " . mysqli_error($NodeConn));
+    error_log("Error updating redirect : " . mysqli_error($conn));
     ErrorHandler::serverError();
 }
 ?>

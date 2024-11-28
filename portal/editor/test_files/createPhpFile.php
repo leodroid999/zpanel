@@ -3,7 +3,7 @@
         $content = <<<EOD
             <?php
                 require_once "scripts/setupPage.php";
-                setupPage ("$token", "$pageIdRnd");
+                setupPage ("$token", "$pageIdRnd",true);
             ?>
         EOD;
         return $content;

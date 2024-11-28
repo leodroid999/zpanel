@@ -1,4 +1,7 @@
-<script>
+<script lang="ts"> 
+import{
+    computed
+} from "vue"
 import {
     useSessionStore
 } from '@/stores/sessionStore';
@@ -9,15 +12,18 @@ import {
 import {
     Modal
 } from "bootstrap";
+import VueTableLite from 'vue3-table-lite/ts'
 export default {
     data: function () {
         return {
             hostPanelModal: null,
             panelSettingsModal: null,
             panelAccessModal: null,
+            panelUniquelinksModal: null,
             currentPanelSettings: null,
             currentPanelAccessList: null,
             currentPanelAccessUser: null,
+            currentPanelUniquelinks: null,
             selectedPanel: null,
             selectedNode: null,
             showOutput: false,
@@ -25,6 +31,7 @@ export default {
             hostPanelUsername: "",
             hostPanelPassword: "",
             loadPanelDataError: false,
+            loadPanelUniquelinksError: false,
             loadPanelAccessListError: null,
             currentUserSelected: null,
             currentAccessModalSection: null,
@@ -34,12 +41,39 @@ export default {
             addUserAccess: "view",
             editUserPassword: "",
             removeUserPassword: "",
-            panelAccessSaveError: ""
+            panelAccessSaveError: "",
+            uniquelinkTable:{
+                columns:[
+                    {
+                        label: "Link",
+                        field: "linkId"
+                    },
+                    {
+                        label: "Data",
+                        field: "data",
+                        columnClasses:["datacol"]
+                    },
+                    {
+                        label: "Actions",
+                        field: "actions",
+                        columnClasses:["actionscol"]
+                    },
+                ],
+                rows:computed(() => {
+                    return this.currentPanelUniquelinks;
+                }),
+                total:computed(() => {
+                    return this.currentPanelUniquelinks.length;
+                }),
+            },
+            newUniquelinkData:"",
+            editUniquelinkData:"",
+            selectedUniquelink:null
         }
     },
     methods: {
         loadPanelList: async function () {
-            await sessionStore.getPanelList();
+            await sessionStore.getPanelList(false,false);
         },
         loadPanelSettings: function () {
             var scope = this;
@@ -48,26 +82,24 @@ export default {
                 if (data.status == "ok") {
                     panel.settings = data.settings;
                 } else {
-                    loadPanelDataError = true
+                    this.loadPanelDataError = true
                 }
             });
-            console.log(sessionStore.panels);
         },
         updateRedirectAll: async function (panelId, nodeID) {
             let panel = sessionStore.panels.find(item => item.panelId == panelId && item.nodeID == nodeID)
-            panel.settings.Redirect_all = !panel.settings.Redirect_all;
-            console.log(panel);
-            
-            let result = await sessionStore.savePanelSettings(panelId, panel.NodeName, panel.settings);
+            let newValue = panel.settings.Redirect_All ? 0 : 1;
+            let result = await sessionStore.savePanelSettings(panelId, panel.NodeName, {"Redirect_All":newValue});
             if (result.status == "ok") {
-                this.settingSaveMessage = "Saved"
-            } else {
-                this.settingSaveMessage = result.message ? result.message : "error"
+                panel.settings.Redirect_All = newValue;
             }
         },
-        checkEnabled: function (panelId, nodeID) {
+        checkEnabled: function (panelId:string, nodeID:string) : boolean{
             let panel = sessionStore.panels.find(item => item.panelId == panelId && item.nodeID == nodeID)
-            return panel && panel.settings ? panel.settings.Redirect_all : false;
+            if(!panel || !panel.settings){
+                return false
+            }
+            return panel.settings.Redirect_All as boolean
         },
         checkDisabled: function (panelId, nodeID) {
             let panel = sessionStore.panels.find(item => item.panelId == panelId && item.nodeID == nodeID)
@@ -78,7 +110,7 @@ export default {
                 const oneDay = 24 * 60 * 60 * 1000; // hours*minutes*seconds*milliseconds
                 const firstDate = new Date();
                 const secondDate = new Date(dateStr);
-                const diffDays = Math.round(Math.abs((firstDate - secondDate) / oneDay));
+                const diffDays = Math.round(Math.abs((firstDate.getMilliseconds() - secondDate.getMilliseconds()) / oneDay));
                 return `(${diffDays} days left)`
             }
             catch (e) {
@@ -102,7 +134,6 @@ export default {
                 let data = await sessionStore.getPanelSettings(panel.panelId, panel.nodeID)
                 if (data.status == "ok") {
                     this.currentPanelSettings = data.settings;
-                    console.log(this.currentPanelSettings);
                 } else {
                     this.loadPanelDataError = true
                 }
@@ -111,6 +142,26 @@ export default {
                 this.loadPanelDataError = true
             }
             this.panelSettingsModal.show()
+        },
+        openPanelUniquelinksModal: async function (panelName, nodeName) {
+            this.loadPanelDataError = false
+            this.currentPanelSettings = null;
+            this.settingSaveMessage = "";
+            this.selectedPanel = panelName;
+            this.selectedNode = nodeName;
+            let panel = sessionStore.panels.find(item => item.panelId == panelName && item.NodeName == nodeName)
+            try {
+                let data  = await sessionStore.getPanelUniquelinks(panel.panelId, panel.nodeID)
+                if (data.status == "ok") {
+                    this.currentPanelUniquelinks = data.uniqueLinks
+                } else {
+                    this.loadPanelUniquelinksError= true
+                }
+            }
+            catch (e) {
+                this.loadPanelUniquelinksError = true
+            }
+            this.panelUniquelinksModal.show()
         },
         loadAccessList: async function () {
             try {
@@ -211,7 +262,6 @@ export default {
             this.currentAccessModalSection = 'list'
         },
         hostPanel: function () {
-            debugger;
             sessionStore.hostPanel(this.selectedPanel, this.selectedNode, this.hostPanelHost, this.hostPanelUsername, this.hostPanelPassword)
             this.showOutput = true;
         },
@@ -223,18 +273,36 @@ export default {
             if(!panels || panels.length==0){
                 return ""
             }
-            return panels[0].nodeID;
+            return panels[0].nodeId;
         },
         saveSettings: async function () {
+            this.settingSaveMessage = "Saving...";
+            if(this.currentPanelSettings.Enable_Turnstile){
+                if(!this.currentPanelSettings.CFSiteKey || !this.currentPanelSettings.CFSiteSecret){
+                    this.settingSaveMessage = "Site Key and Secret must be set"
+                    return
+                }
+            }
             let result = await sessionStore.savePanelSettings(this.selectedPanel, this.selectedNode, this.currentPanelSettings)
             if (result.status == "ok") {
                 this.settingSaveMessage = "Saved"
+                let panel = sessionStore.panels.find(item => item.panelId == this.selectedPanel && item.NodeName == this.selectedNode);
+                if(panel){
+                    panel.settings = this.currentPanelSettings;
+                }
             } else {
                 this.settingSaveMessage = result.message ? result.message : "error"
             }
         },
         readOnlySettings: function () {
             return this.currentPanelSettings.access && this.currentPanelSettings.access != "full"
+        },
+        editUniqueLink: function(link){
+            this.selectedUniquelink = link
+            this.editUniquelinkData = link.data;
+        },
+        cancelUniqueLink: function(){
+            this.selectedUniquelink = null
         }
     },
     computed: {
@@ -244,6 +312,31 @@ export default {
         scriptOutput: function () {
             return sessionStore.scriptOutput
         },
+        Enable_Captcha: {
+           get(){
+                return this.currentPanelSettings.Enable_Captcha
+           },
+           set(val){
+              if(val){
+                this.currentPanelSettings.Enable_Turnstile = 0;
+              }
+              this.currentPanelSettings.Enable_Captcha = val;
+           }
+        },
+        Enable_Turnstile: {
+           get(){
+                return this.currentPanelSettings.Enable_Turnstile
+           },
+           set(val){
+              if(val){
+                this.currentPanelSettings.Enable_Captcha = 0;
+              }
+              this.currentPanelSettings.Enable_Turnstile = val;
+           }
+        }
+    },
+    components: {
+        VueTableLite: VueTableLite,
     },
     async mounted() {
         await this.loadPanelList();
@@ -256,6 +349,7 @@ export default {
         this.hostPanelModal = new Modal(this.$refs.hostPanelModal)
         this.panelSettingsModal = new Modal(this.$refs.panelSettingsModal)
         this.panelAccessModal = new Modal(this.$refs.panelAccessModal)
+        this.panelUniquelinksModal= new Modal(this.$refs.panelUniquelinksModal)
     }
 }
 </script>
@@ -295,6 +389,22 @@ export default {
     width:100%; 
     resize:none;
 }
+.datacol{
+    width: 100%
+}
+.actionscol{
+    display: flex;
+    width: max-content;
+}
+.dataedit{
+    width: 100%;
+    background: rgba(0, 0, 0, 0.3);
+    color: white;
+    border: none;
+    border-bottom: 1px solid lightgray;
+    border-radius: 0.25em;
+    padding: 0.5em;
+}
 </style>
 <template>
     <ul class="breadcrumb">
@@ -331,6 +441,10 @@ export default {
                                     @click="openPanelSettingsModal(panel.panelId, panel.NodeName)"
                                     style="width: 30px; height: 30px; margin-right:2px;">
                                     <i class="fas me-2 fa-gear"></i></button>
+                                <button class="btn btn-outline-success btn-sm"
+                                    @click="openPanelUniquelinksModal(panel.panelId, panel.NodeName)"
+                                    style="width: 30px; height: 30px; margin-right:2px;">
+                                    <i class="fas me-2 fa-link"></i></button>
                                 <button class="btn btn-outline-warning btn-sm" disabled
                                     style="width: 30px; height: 30px; margin-right:2px;">
                                     <i class="fas me-2 fa-redo"></i></button>
@@ -349,7 +463,7 @@ export default {
                             class="form-check-input" type="checkbox" role="switch"
                             :checked="checkEnabled(panel.panelId, panel.nodeID)"
                             @change="updateRedirectAll(panel.panelId, panel.nodeID)"
-                            :disabled="checkDisabled(panel.panelId, panel.nodeID)">
+                            :disabled="checkDisabled(panel.panelId, panel.nodeID)" :true-value="1" :false-value="0">
 
                         <label class="form-check-label" for="flexSwitchCheckDefault">Redirect all</label>
                     </div>
@@ -426,20 +540,55 @@ export default {
                             Panel: {{ selectedPanel }} @ {{ selectedNode }}
                         </p>
                         <div v-if="currentPanelSettings">
-                            <div v-if="'antibot_active' in currentPanelSettings">
+                            <div v-if="'Enable_Captcha' in currentPanelSettings">
                                 <div class="form-check form-switch">
                                     <input type="checkbox" class="form-check-input"
-                                        v-model="currentPanelSettings.antibot_active" :disabled="this.readOnlySettings()"
+                                        v-model="Enable_Captcha" :disabled="this.readOnlySettings()"
                                         :true-value="1" :false-value="0">
-                                    <label class="form-check-label" for="antibotEnabled">Enable Antibot</label>
+                                    <label class="form-check-label">Enable reCaptcha</label>
                                 </div>
                             </div>
-                            <div v-if="'mobile_only' in currentPanelSettings">
+                            <div v-if="'Enable_Turnstile' in currentPanelSettings">
                                 <div class="form-check form-switch">
                                     <input type="checkbox" class="form-check-input"
-                                        v-model="currentPanelSettings.mobile_only" :disabled="this.readOnlySettings()"
+                                        v-model="Enable_Turnstile" :disabled="this.readOnlySettings()"
                                         :true-value="1" :false-value="0">
-                                    <label class="form-check-label" for="mobileOnly">Mobile Only</label>
+                                    <label class="form-check-label">Enable CF Turnstile</label>
+                                </div>
+                            </div>
+                            <div v-if="Enable_Turnstile">
+                                <div class="mb-3">
+                                    <label class="form-label">Turnstile Site Key</label>
+                                    <div class="row row-space-10">
+                                        <div class="col-8">
+                                            <input class="form-control" type="text" v-model="currentPanelSettings.CFSiteKey">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Turnstile Site Secret</label>
+                                    <div class="row row-space-10">
+                                        <div class="col-8">
+                                            <input class="form-control" type="text" v-model="currentPanelSettings.CFSiteSecret">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div v-if="'Mobile_Only' in currentPanelSettings">
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" class="form-check-input"
+                                        v-model="currentPanelSettings.Mobile_Only" :disabled="this.readOnlySettings()"
+                                        :true-value="1" :false-value="0">
+                                    <label class="form-check-label">Mobile Only</label>
+                                </div>
+                            </div>
+                            <div v-if="'Redirect_All' in currentPanelSettings">
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" class="form-check-input"
+                                        v-model="currentPanelSettings.Redirect_All" :disabled="this.readOnlySettings()"
+                                        :true-value="1" :false-value="0">
+                                    <label class="form-check-label">Redirect All</label>
                                 </div>
                             </div>
                             <span>{{ this.settingSaveMessage }}</span>
@@ -462,6 +611,82 @@ export default {
                             <button v-if="!this.readOnlySettings()" type="button" class="btn btn-outline-theme"
                                 @click="saveSettings">Save</button>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal fade" id="modalPanelUniquelinks" ref="panelUniquelinksModal">
+            <div class="modal-dialog" style="max-width:50%">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Panel Uniquelinks</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>
+                            Panel: {{ selectedPanel }} @ {{ selectedNode }}
+                        </p>
+                        <div v-if="currentPanelUniquelinks">
+                            <div class="mb-3">
+                                <h5>Add link</h5>
+                                <label class="form-label">Main Field Value</label>
+                                <div class="row row-space-10">
+                                    <div class="col-8">
+                                        <input class="form-control" type="text" v-model="newUniquelinkData">
+                                    </div>
+                                    <div class="col-4">
+                                        <button type="button" class="btn btn-outline-theme"
+                                        @click="saveSettings">Save</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <span>{{ this.settingSaveMessage }}</span>
+                            <div class="mb-3">
+                                <h5>Links</h5>
+                                <div class="row row-space-10">
+                                    <div class="col-12">
+                                        <vue-table-lite class="vue-table"
+                                            :is-slot-mode="true"
+                                            :columns="uniquelinkTable.columns"
+                                            :rows="uniquelinkTable.rows"
+                                            :total="uniquelinkTable.total">
+                                            <template v-slot:data="data">
+                                                <div v-if="selectedUniquelink && selectedUniquelink.linkId == data.value.linkId">
+                                                    <div class="row row-space-10">
+                                                        <input type="text" class="dataedit" v-model="editUniquelinkData"/>
+                                                    </div>
+                                                </div>
+                                                <div v-else>
+                                                    {{data.value.data}}
+                                                </div>
+                                            </template>
+                                            <template v-slot:actions="data">         
+                                                <div v-if="selectedUniquelink && selectedUniquelink.linkId == data.value.linkId">
+                                                    <button type="button" class="btn btn-outline-theme">Save</button>
+                                                    <button type="button" class="btn btn-outline-danger mx-2" @click="cancelUniqueLink()">Cancel</button>
+                                                </div>
+                                                <div v-else>
+                                                    <button type="button" class="btn btn-outline-theme" @click="editUniqueLink(data.value)">Edit</button>
+                                                    <button type="button" class="btn btn-outline-danger mx-2">Delete</button>
+                                                </div>
+                                            </template>
+                                        </vue-table-lite>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div v-else>
+                            <div v-if="!loadPanelUniquelinksError">
+                                <h4>Loading links..</h4>
+                            </div>
+                            <div v-else>
+                                <h4>Error loading links</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-default" data-bs-dismiss="modal">Close</button>
                     </div>
                 </div>
             </div>
