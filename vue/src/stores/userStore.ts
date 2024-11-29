@@ -101,7 +101,7 @@ export const useUserStore = defineStore({
       data.append('username',username);
       data.append('password',password);
       data.append('telegram',telegram);
-      data.append('referal',password);
+      data.append('referal',referal);
       let options={
         method:"POST",
         body: data,

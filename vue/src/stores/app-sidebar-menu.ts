@@ -108,7 +108,12 @@ let baseMenu = [
     icon: "bi bi-gear",
     text: "Settings",
   },
-{
+  {
+    url: "/invites",
+    icon: "bi bi-share",
+    text: "Invites",
+  },
+  {
     url: "/faq",
     icon: "bi bi-flag",
     text: "Help",

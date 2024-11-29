@@ -54,8 +54,8 @@ const router = createRouter({
     { path: '/adminmenus', component: () => import('../views/Admin-Menus.vue'), ...AUTH_REQUIRED  },
     { path: '/adminusers', component: () => import('../views/Admin-Users.vue'), ...AUTH_REQUIRED  },
     { path: '/adminpanels', component: () => import('../views/Admin-Panels.vue'), ...AUTH_REQUIRED  },
-    { path: '/profiel', component: () => import('../views/Profile.vue'), ...AUTH_REQUIRED  }
-
+    { path: '/profiel', component: () => import('../views/Profile.vue'), ...AUTH_REQUIRED  },
+    { path: '/invites', component: () => import('../views/Invites.vue'), ...AUTH_REQUIRED  }
   ],
 });   
 

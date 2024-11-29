@@ -24,8 +24,13 @@ const userStore = useUserStore();
 export default {
 	data() {
 		return {
-			// ajaxUrl : 'http://localhost/portal/usersinfo.php',
-			ajaxUrl : '/portal/usersinfo.php',
+			ajax: {
+				url: 'http://localhost/portal/usersinfo.php',
+				type: 'POST',
+				xhrFields: {
+					withCredentials: true // Required for session cookies
+				}
+			},
 			columns: [
 				{ data: 'userId'},
 				{ data: 'username'},
@@ -80,7 +85,7 @@ export default {
 	<div class="data-management d-none2" data-id="table">
 
 		<DataTable class="table table-bordered table-xs w-100 fw-bold text-nowrap mb-3"
-			:ajax="ajaxUrl" :columns="columns">
+			:ajax="ajax" :columns="columns">
 			<thead>
 				<tr>
 					<th>User ID</th>

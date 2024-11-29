@@ -81,7 +81,7 @@ export default {
 				</div>
 
 				<div class="mb-3">
-					<label class="form-label">Referal discount code (optional) <span class="text-danger"></span></label>
+					<label class="form-label">Invite code (optional) <span class="text-danger"></span></label>
 					<input type="text" v-model="referalInput" class="form-control form-control-lg bg-white bg-opacity-5"
 						placeholder="" />
 				</div>

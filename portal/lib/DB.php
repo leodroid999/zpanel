@@ -7,9 +7,11 @@ class DB
     const servername = "localhost";
     const username = "vue";
     const password = "TaxsSQL83819";
+    const dbname = "testbase";
+
     // const username = "root";
     // const password = "";
-    const dbname = "testbase";
+    // const dbname = "testbase1";
 
     public static function connect()
     {
@@ -51,6 +53,37 @@ class DB
             return $result;
         }
         return false;
+    }
+
+    public static function getAllInviteCodes($conn, $userID){
+
+        $query = $conn->prepare("SELECT user_type from users where userId=$userID LIMIT 1");
+        $query->execute();
+        $queryresult = $query->get_result();
+        $result = $queryresult->fetch_all();
+        $user_type = $result[0];
+
+        if($user_type == 'admin')
+            $query = $conn->prepare("SELECT invites.*, users.username from invites inner join users on invites.userId = users.userId");
+        else
+            $query = $conn->prepare("SELECT invites.*, users.username from invites inner join users on invites.userId = users.userId WHERE invites.userId=$userID");
+
+        $query->execute();
+        $queryresult = $query->get_result();
+        if ($queryresult) {
+            $result = $queryresult->fetch_all(MYSQLI_ASSOC);
+            return $result;
+        }
+        return false;
+    }
+
+    public static function createInviteCode($conn, $userID, $inviteCode, $maxUses, $expireDays){
+        $currentTime = time();
+        $expireTime = $currentTime + intval($expireDays) * 24 * 60 * 60;
+
+        $query = $conn->prepare("INSERT into invites (userId, code, created, expired, users, used) VALUES ($userID, '$inviteCode', $currentTime, $expireTime, $maxUses, 0)");
+        $status = $query->execute();
+        return $status;
     }
 
     public static function getAllPanels($conn){

@@ -7,7 +7,8 @@ use Library\DB as DB;
 
 // change this to server side sessions saved in sql
 session_start();
-$userID = $_SESSION['userID'];
+
+$userID = $_SESSION["userID"];
 
 if(!$userID){
     ErrorHandler::authError();
@@ -22,14 +23,14 @@ if (!$conn) {
     ErrorHandler::serverError();
 }
 
-$users=DB::getAllUsers($conn, '');
-if(!$users){
+$invites=DB::getAllInviteCodes($conn, $userID);
+if(!is_array($invites) && !$invites){
     error_log("Error loading user data: " . mysqli_error($conn));
     ErrorHandler::authError();
 }
 
 $responseData = new stdClass();
-$responseData->data = $users;
+$responseData->data = $invites;
 
 echo json_encode(
     $responseData
