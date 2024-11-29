@@ -556,13 +556,13 @@ textarea{
                                     v-model="blueprint.MainField" @change="updateBlueprint($event)" v-b-tooltip.hover
                                     title="PLACEHOLDER tooltip for x, y">
                                     <option disabled value="">Select main</option>
-                                    <option value="Cardnumber">Cardnumber</option>
-                                    <option value="Username">Username</option>
-                                    <option value="Email Address">Email Address</option>
+                                    <option value="cardnumber">Cardnumber</option>
+                                    <option value="username">Username</option>
+                                    <option value="email_address">Email Address</option>
                                 </select>
-                                <label v-if="blueprint.MainField == 'Cardnumber'"> {{ logs.cardnumber }} </label>
-                                <label v-if="blueprint.MainField == 'Username'"> {{ logs.username }} </label>
-                                <label v-if="blueprint.MainField == 'Email Address'"> {{ logs.email_address }} </label>
+                                <label v-if="blueprint.MainField == 'cardnumber'"> {{ logs.cardnumber }} </label>
+                                <label v-if="blueprint.MainField == 'username'"> {{ logs.username }} </label>
+                                <label v-if="blueprint.MainField == 'email_address'"> {{ logs.email_address }} </label>
 
                             </h1>
                             <h5 class="card-title">Responses:</h5>
@@ -719,10 +719,10 @@ textarea{
                         data-bs-toggle="modal" data-bs-target="#modalErrors">
                         Manage Errors <i class="bi bi-ban"></i>
                     </button>
-                    <button type="button" class="btn-h btn gap btn-outline-theme btn-sm" 
+                    <!-- <button type="button" class="btn-h btn gap btn-outline-theme btn-sm" 
                          data-bs-toggle="modal" data-bs-target="#modalTestDeploy" @click="testDeploy">
                             Test page <i class="bi bi-caret-right-square-fill"></i>
-                    </button>
+                    </button> -->
 
                     <a :href="'//z-panel.io/portal/editor2/?page=' + this.blueprint.blueprint" target="_blank">
                         <button type="button" class="btn-h btn gap btn-outline-theme btn-sm" data-token="End">
@@ -821,14 +821,12 @@ textarea{
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label">Select Page File</label>
+                        <label class="form-label">Enter Page File</label>
                         <div class="row row-space-10">
                             <div class="col-8">
-                                <select class="form-select form-select-md" v-model="blueprintToken.pagefile"
-                                    v-b-tooltip.hover title="PLACEHOLDER tooltip for x, y">
-                                    <option :value="item.pagefile" v-for="item in blueprint.index">{{ item.pagefile }}
-                                    </option>
-                                </select>
+                                <input class="form-control" type="text" v-model="blueprintToken.pagefile"
+                                    v-b-tooltip.hover title="PLACEHOLDER tooltip for x, y"
+                                    placeholder="Page File" />
                             </div>
                         </div>
                     </div>

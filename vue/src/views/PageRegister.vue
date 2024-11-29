@@ -26,8 +26,8 @@ export default {
 	methods: {
 		submitForm: function () {
 			this.registerError = null;
-			if (!this.usernameInput || this.usernameInput == "" || !this.passwordInput || this.passwordInput == "") {
-				this.registerError = "Missing username or password"
+			if (!this.usernameInput || this.passwordInput == "" || this.referalInput == "") {
+				this.registerError = "Missing username, password and invite code."
 				return
 			}
 			userStore.register(this.usernameInput, this.passwordInput, this.telegramInput, this.referalInput);
@@ -81,7 +81,7 @@ export default {
 				</div>
 
 				<div class="mb-3">
-					<label class="form-label">Invite code (optional) <span class="text-danger"></span></label>
+					<label class="form-label">Invite code<span class="text-danger">*</span></label>
 					<input type="text" v-model="referalInput" class="form-control form-control-lg bg-white bg-opacity-5"
 						placeholder="" />
 				</div>
