@@ -1,6 +1,9 @@
 <script lang="ts"> 
 import{
-    computed
+    createApp,
+    defineComponent,
+    ref,
+    h
 } from "vue"
 import {
     useSessionStore
@@ -13,6 +16,14 @@ import {
     Modal
 } from "bootstrap";
 import VueTableLite from 'vue3-table-lite/ts'
+import { error } from "console";
+import { LineElement } from "chart.js";
+
+interface ErrorResponse{
+  message:string,
+  error:string,
+}
+
 export default {
     data: function () {
         return {
@@ -20,12 +31,14 @@ export default {
             panelSettingsModal: null,
             panelAccessModal: null,
             panelUniquelinksModal: null,
+            panelFileManagerModal: null,
             currentPanelSettings: null,
             currentPanelAccessList: null,
             currentPanelAccessUser: null,
             currentPanelUniquelinks: null,
             selectedPanel: null,
             selectedNode: null,
+            selectedNodeDomain: null,
             showOutput: false,
             hostPanelHost: "",
             hostPanelUsername: "",
@@ -33,6 +46,7 @@ export default {
             loadPanelDataError: false,
             loadPanelUniquelinksError: false,
             loadPanelAccessListError: null,
+            loadFileManagerError:null,
             currentUserSelected: null,
             currentAccessModalSection: null,
             settingSaveMessage: "",
@@ -42,11 +56,17 @@ export default {
             editUserPassword: "",
             removeUserPassword: "",
             panelAccessSaveError: "",
-            uniquelinkTable:{
+            uniqueLinksFiltered:[],
+            uniqueLinkTable:{
+                isLoading:false,
                 columns:[
                     {
                         label: "Link",
                         field: "linkId"
+                    },
+                    {
+                        label: "Field",
+                        field: "field"
                     },
                     {
                         label: "Data",
@@ -59,24 +79,94 @@ export default {
                         columnClasses:["actionscol"]
                     },
                 ],
-                rows:computed(() => {
-                    return this.currentPanelUniquelinks;
-                }),
-                total:computed(() => {
-                    return this.currentPanelUniquelinks.length;
-                }),
+                rows:[],
+                total:0
             },
             newUniquelinkData:"",
+            newUniquelinkField:"email_address",
             editUniquelinkData:"",
-            selectedUniquelink:null
+            uniqueLinkAddMessage:"",
+            uniqueLinkSaveMessage:"",
+            selectedUniquelink:null,
+            searchBar:null,
+            fileManagerToken:null,
+            
         }
     },
     methods: {
+        initLinkTable: function ({
+                el: tableComponent
+            }){
+                let headerTr = tableComponent.getElementsByClassName("vtl-thead-tr");
+                if (! headerTr[0]) {
+                    return;
+                }
+                let cloneTr = headerTr[0].cloneNode(true); // Clone first <tr>
+                let childTh = cloneTr.getElementsByClassName("vtl-thead-th");
+                for (let i = 0; i < childTh.length; i++) {
+                    // Clear <th>'s HTML
+                    childTh[i].innerHTML = "";
+                }
+
+                const SearchBar = defineComponent(
+                    (props) => {
+                        return () => {
+                            let node=h("input", {
+                                class: "searchBar form-control",
+                                placeholder:"Search..",
+                                ref:"search",
+                                onInput: function (e) { 
+                                    props.filterLinks(e.target.value)
+                                },
+                            });
+                            props.searchBar = node;
+                            return node;   
+                        }
+                    },
+                    // extra options, e.g. declare props and emits
+                    {
+                        props: {
+                            filterLinks:{
+                                type:Function
+                            },
+                            searchBar:{
+                                type:Object
+                            }
+                        }
+                    }
+                )
+
+                // Create a input element and append to first <th>
+                createApp(
+                   SearchBar,{filterLinks:this.filterLinks,searchBar:this.searchBar}
+                ).mount(childTh[2]);
+
+                // append cloned element to the header after first <tr>
+                headerTr[0].after(cloneTr)
+        },
+        resetFilter: function(){
+            this.uniqueLinksFiltered = this.currentPanelUniquelinks;
+            this.uniqueLinkTable.rows = this.uniqueLinksFiltered
+            this.uniqueLinkTable.total = this.uniqueLinksFiltered.length;
+        },
+        initLinkTableRows: function(rowData){
+            this.currentPanelUniquelinks = rowData;
+            this.uniqueLinksFiltered = rowData;
+            this.uniqueLinkTable.rows = rowData.slice(0,10);
+            this.uniqueLinkTable.total = this.uniqueLinksFiltered.length;
+        },
+        filterLinks: function(term){
+            this.uniqueLinksFiltered=this.currentPanelUniquelinks.filter(i => i.data.includes(term))
+            this.uniqueLinkTable.rows = this.uniqueLinksFiltered.slice(0,10)
+            this.uniqueLinkTable.total = this.uniqueLinksFiltered.length;
+        },
+        doSearchLinks: function (offset, limit, order, sort) {
+            this.uniqueLinkTable.rows=this.uniqueLinksFiltered.slice(offset,offset+limit)
+        },
         loadPanelList: async function () {
             await sessionStore.getPanelList(false,false);
         },
         loadPanelSettings: function () {
-            var scope = this;
             sessionStore.panels.forEach(async function (panel) {
                 let data = await sessionStore.getPanelSettings(panel.panelId, panel.nodeID)
                 if (data.status == "ok") {
@@ -149,19 +239,20 @@ export default {
             this.settingSaveMessage = "";
             this.selectedPanel = panelName;
             this.selectedNode = nodeName;
+            this.panelUniquelinksModal.show()
             let panel = sessionStore.panels.find(item => item.panelId == panelName && item.NodeName == nodeName)
             try {
-                let data  = await sessionStore.getPanelUniquelinks(panel.panelId, panel.nodeID)
-                if (data.status == "ok") {
-                    this.currentPanelUniquelinks = data.uniqueLinks
-                } else {
+                let result = await sessionStore.getUniqueLinks(panel.panelId, panel.nodeID)
+                if("status" in result && result.status == "ok"){
+                    this.initLinkTableRows(result.uniqueLinks)
+                } 
+                else {
                     this.loadPanelUniquelinksError= true
                 }
             }
             catch (e) {
                 this.loadPanelUniquelinksError = true
             }
-            this.panelUniquelinksModal.show()
         },
         loadAccessList: async function () {
             try {
@@ -184,6 +275,28 @@ export default {
             this.currentPanelAccessUser = null;
             this.loadAccessList();
             this.panelAccessModal.show()
+        },
+        loadFileManagerCreds: async function () {
+            try {
+                let data = await sessionStore.getPanelFMCreds(this.selectedPanel,this.selectedNode)
+                if (data.status == "ok") {
+                    this.fileManagerToken = data.fm_token
+                } else {
+                    this.loadFileManagerError = true
+                }
+            }
+            catch (e) {
+                this.loadFileManagerError = true
+            }
+        },
+        openPanelFileManagerModal: async function (panelName, nodeName, domain) {
+            this.panelAccessSaveError = ""
+            this.fileManagerToken = "";
+            this.selectedPanel = panelName;
+            this.selectedNode = nodeName;
+            this.selectedNodeDomain = domain;
+            this.loadFileManagerCreds()
+            this.panelFileManagerModal.show()
         },
         addUser: async function () {
             this.addUserUsername = "",
@@ -273,7 +386,7 @@ export default {
             if(!panels || panels.length==0){
                 return ""
             }
-            return panels[0].nodeId;
+            return panels[0].nodeID;
         },
         saveSettings: async function () {
             this.settingSaveMessage = "Saving...";
@@ -300,9 +413,69 @@ export default {
         editUniqueLink: function(link){
             this.selectedUniquelink = link
             this.editUniquelinkData = link.data;
+
         },
         cancelUniqueLink: function(){
             this.selectedUniquelink = null
+        },
+        saveUniqueLink: async function(){
+            this.uniqueLinkSaveMessage = "Saving...";
+            if(!this.editUniquelinkData){
+                this.uniqueLinkSaveMessage="Error: No value for link data."
+                return;
+            }
+            if(this.editUniquelinkData.includes(",")){
+                this.uniqueLinkSaveMessage="lists are not supported when editing, please add new links above";
+                return;
+            }
+
+            let result = await sessionStore.saveUniqueLink(this.selectedPanel, this.selectedNode,this.selectedUniquelink.linkId,this.editUniquelinkData)
+            if ("status" in result ) {
+                this.uniqueLinkSaveMessage = "Saved"
+                this.selectedUniquelink.data = this.editUniquelinkData
+                this.selectedUniquelink = null
+            } else {
+                this.uniqueLinkSaveMessage = result.message ? result.message : "error"
+            }
+        },
+        addUniqueLink: async function(){
+            this.uniqueLinkAddMessage = "Creating...";
+            if(!this.newUniquelinkData){
+                this.uniqueLinkAddMessage="Error: No value for link data."
+                return;
+            }
+            let result = await sessionStore.addUniqueLink(this.selectedPanel, this.selectedNode,this.newUniquelinkData,this.newUniquelinkField)
+            if ("status" in result ) {
+                for(let link of result.uniqueLinks){
+                    this.uniqueLinkAddMessage = "Created"
+                    link.field = this.newUniquelinkField;
+                    this.currentPanelUniquelinks.unshift(link)
+                    this.resetFilter();
+                    this.doSearchLinks(0,10,"asc","linkId")
+                
+                }
+            } else {
+                this.uniqueLinkAddMessage = result.message ? result.message : "error"
+            }
+        },
+        deleteUniqueLink: async function(linkId){
+            let result = await sessionStore.deleteUniqueLink(this.selectedPanel, this.selectedNode,linkId)
+            if ("status" in result){
+                this.currentPanelUniquelinks=this.currentPanelUniquelinks.filter(i => i.linkId != linkId);
+                this.uniqueLinksFiltered=this.uniqueLinksFiltered.filter(i => i.linkId != linkId);
+                this.uniqueLinkTable.rows=this.uniqueLinkTable.rows.filter(i => i.linkId != linkId);
+                this.uniqueLinkSaveMessage="Deleted"
+            }
+            else{
+                this.uniqueLinkAddMessage = result.message ? result.message : "error"
+            }
+        },
+        exportUniqueLinks: async function(){
+            let url=`/portal/uniqueLinks.php?panelId=${this.selectedPanel}&nodeId=${this.selectedNode}&dl=1`
+            var link=document.createElement('a');
+            link.href = url
+            link.download = `${this.selectedPanel}-links.csv`
+            link.click()
         }
     },
     computed: {
@@ -350,6 +523,7 @@ export default {
         this.panelSettingsModal = new Modal(this.$refs.panelSettingsModal)
         this.panelAccessModal = new Modal(this.$refs.panelAccessModal)
         this.panelUniquelinksModal= new Modal(this.$refs.panelUniquelinksModal)
+        this.panelFileManagerModal= new Modal(this.$refs.panelFileManagerModal)
     }
 }
 </script>
@@ -405,6 +579,23 @@ export default {
     border-radius: 0.25em;
     padding: 0.5em;
 }
+
+@media (max-width:720px) {
+    .dialogLarge{
+        max-width: 90%;
+    }
+}
+@media (min-width:720px) {
+    .dialogLarge{
+        max-width: 50%;
+    }
+}
+select{
+    appearance: menulist;
+}
+option{
+    background:rgb(0,0,0)
+}
 </style>
 <template>
     <ul class="breadcrumb">
@@ -433,7 +624,6 @@ export default {
                         <div class="row">
                             <div class="col">
                                 <button class="btn btn-outline-primary btn-sm"
-                                    v-if="!panel.access || panel.access == 'full'"
                                     @click="openHostModal(panel.panelId, panel.NodeName)"
                                     style="width: 30px; height: 30px; margin-right:2px;">
                                     <i class="fas me-2 fa-upload"></i></button>
@@ -445,6 +635,10 @@ export default {
                                     @click="openPanelUniquelinksModal(panel.panelId, panel.NodeName)"
                                     style="width: 30px; height: 30px; margin-right:2px;">
                                     <i class="fas me-2 fa-link"></i></button>
+                                <button class="btn btn-outline-success btn-sm"
+                                    @click="openPanelFileManagerModal(panel.panelId, panel.NodeName,panel.nodeID)"
+                                    style="width: 30px; height: 30px; margin-right:2px;">
+                                    <i class="fas me-2 fa-file"></i></button>
                                 <button class="btn btn-outline-warning btn-sm" disabled
                                     style="width: 30px; height: 30px; margin-right:2px;">
                                     <i class="fas me-2 fa-redo"></i></button>
@@ -591,6 +785,27 @@ export default {
                                     <label class="form-check-label">Redirect All</label>
                                 </div>
                             </div>
+
+                            <div v-if="'Enable_Panel_ChatId' in currentPanelSettings">
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" class="form-check-input"
+                                        v-model="currentPanelSettings.Enable_Panel_ChatId"
+                                        :true-value="1" :false-value="0">
+                                    <label class="form-check-label">Set Separate TG Chat Id for this panel</label>
+                                </div>
+                            </div>
+
+                            <div v-if="currentPanelSettings.Enable_Panel_ChatId">
+                                <div class="mb-3">
+                                    <label class="form-label">Chat ID</label>
+                                    <div class="row row-space-10">
+                                        <div class="col-8">
+                                            <input class="form-control" type="text" v-model="currentPanelSettings.ChatId">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <span>{{ this.settingSaveMessage }}</span>
                         </div>
                         <div v-else>
@@ -616,7 +831,7 @@ export default {
             </div>
         </div>
         <div class="modal fade" id="modalPanelUniquelinks" ref="panelUniquelinksModal">
-            <div class="modal-dialog" style="max-width:50%">
+            <div class="modal-dialog dialogLarge">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title">Panel Uniquelinks</h5>
@@ -629,27 +844,43 @@ export default {
                         <div v-if="currentPanelUniquelinks">
                             <div class="mb-3">
                                 <h5>Add link</h5>
-                                <label class="form-label">Main Field Value</label>
+                                <label class="form-label">Field</label>
+                                <div class="row row-space-10">
+                                    <div class="col-6">
+                                        <select class="form-control" v-model="newUniquelinkField">
+                                            <option value="email_address">email</option>
+                                            <option value="cardnumber">cardnumber</option>
+                                            <option value="phone">phone</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <label class="form-label"> Value</label>
                                 <div class="row row-space-10">
                                     <div class="col-8">
-                                        <input class="form-control" type="text" v-model="newUniquelinkData">
+                                        <textarea class="form-control" type="text" rows="3" v-model="newUniquelinkData"></textarea>
                                     </div>
                                     <div class="col-4">
                                         <button type="button" class="btn btn-outline-theme"
-                                        @click="saveSettings">Save</button>
+                                        @click="addUniqueLink()">Add</button>
                                     </div>
                                 </div>
                             </div>
-                            <span>{{ this.settingSaveMessage }}</span>
+                            <span>{{ this.uniqueLinkAddMessage }}</span>
                             <div class="mb-3">
                                 <h5>Links</h5>
+                                <button type="button" class="ml-2 btn btn-outline-theme" @click="exportUniqueLinks()">Export</button>
+                            </div>
+                            <div class="mb-3">
+                                <span>{{ this.uniqueLinkSaveMessage }}</span>
                                 <div class="row row-space-10">
                                     <div class="col-12">
                                         <vue-table-lite class="vue-table"
                                             :is-slot-mode="true"
-                                            :columns="uniquelinkTable.columns"
-                                            :rows="uniquelinkTable.rows"
-                                            :total="uniquelinkTable.total">
+                                            :columns="uniqueLinkTable.columns"
+                                            :rows="uniqueLinkTable.rows"
+                                            :total="uniqueLinkTable.total"
+                                            @VnodeMounted="initLinkTable"
+                                            @do-search="doSearchLinks">                     
                                             <template v-slot:data="data">
                                                 <div v-if="selectedUniquelink && selectedUniquelink.linkId == data.value.linkId">
                                                     <div class="row row-space-10">
@@ -662,17 +893,18 @@ export default {
                                             </template>
                                             <template v-slot:actions="data">         
                                                 <div v-if="selectedUniquelink && selectedUniquelink.linkId == data.value.linkId">
-                                                    <button type="button" class="btn btn-outline-theme">Save</button>
+                                                    <button type="button" class="btn btn-outline-theme" @click="saveUniqueLink()">Save</button>
                                                     <button type="button" class="btn btn-outline-danger mx-2" @click="cancelUniqueLink()">Cancel</button>
                                                 </div>
                                                 <div v-else>
                                                     <button type="button" class="btn btn-outline-theme" @click="editUniqueLink(data.value)">Edit</button>
-                                                    <button type="button" class="btn btn-outline-danger mx-2">Delete</button>
+                                                    <button type="button" class="btn btn-outline-danger mx-2" @click="deleteUniqueLink(data.value.linkId)">Delete</button>
                                                 </div>
                                             </template>
                                         </vue-table-lite>
                                     </div>
                                 </div>
+                                
                             </div>
                         </div>
                         
@@ -766,6 +998,7 @@ export default {
                                 <div class="row row-space-10">
                                     <div class="col-8">
                                         <select class="panelAccessSelect" v-model="addUserAccess">
+                                            <option value="caller">Caller</option>
                                             <option value="view">View Logs/Sessions</option>
                                             <option value="full">Full Access</option>
                                         </select>
@@ -783,6 +1016,7 @@ export default {
                                 <div class="row row-space-10">
                                     <div class="col-8">
                                         <select class="panelAccessSelect" v-model="this.currentPanelAccessUser.access">
+                                            <option value="caller">Caller</option>
                                             <option value="view">View Logs/Sessions</option>
                                             <option value="full">Full Access</option>
                                         </select>
@@ -838,6 +1072,37 @@ export default {
                         <div v-if="currentAccessModalSection == 'removeUser'">
                             <button type="button" class="btn btn-outline-theme" @click="removeUserConfirm">Remove</button>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal fade" id="modalFileManager" ref="panelFileManagerModal">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">File Manager</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>
+                            Panel: {{ selectedPanel }} @ {{ selectedNode }}
+                        </p>
+                        <div v-if="fileManagerToken">
+                            <a target="_blank" v-bind:href="`http://${this.selectedPanel}.${this.selectedNodeDomain}/scripts/fm.php?auth_token=${this.fileManagerToken}`">
+                                <button type="button" class="btn btn-outline-theme">Open File Manager</button>
+                            </a>
+                        </div>
+                        <div v-else>
+                            <div v-if="!loadFileManagerError">
+                                <h4>Loading credentials...</h4>
+                            </div>
+                            <div v-else>
+                                <h4>Error loading credential.</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-default" data-bs-dismiss="modal">Close</button>
                     </div>
                 </div>
             </div>

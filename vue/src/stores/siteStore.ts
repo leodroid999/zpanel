@@ -1,8 +1,7 @@
 import { defineStore, mapActions } from "pinia";
 const SERVER = ""
 
-export const useSiteStore= defineStore({
-  id: "sitesStore",
+export const useSiteStore= defineStore('site-store',{
   state: () => {
     return {
         sites:null,

@@ -1,8 +1,7 @@
 import { defineStore, mapActions } from "pinia";
 const SERVER = ""
 
-export const useWalletStore = defineStore({
-  id: "walletStore",
+export const useWalletStore = defineStore("walletStore",{
   state: () => {
     return {
       walletData:null

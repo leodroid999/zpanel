@@ -17,7 +17,6 @@ const progresses = [] as ProgressFinisher[];
 
 router.beforeEach(async (to, from) => {
 	progresses.push(useProgress().start());
-	appOption.appSidebarMobileToggled = false;
 	document.body.scrollTop = 0;
 	document.documentElement.scrollTop = 0;
 
@@ -65,7 +64,6 @@ document.querySelector('body').classList.add('app-init');
 		'app-sidebar-toggled': appOption.appSidebarToggled,
 		'app-sidebar-collapsed': appOption.appSidebarCollapsed,
 		'app-sidebar-mobile-toggled': appOption.appSidebarMobileToggled,
-		'app-sidebar-mobile-closed': appOption.appSidebarMobileClosed,
 		'app-content-full-height': appOption.appContentFullHeight,
 		'app-content-full-width': appOption.appSidebarHide,
 		'app-without-sidebar': appOption.appSidebarHide,

@@ -1,9 +1,37 @@
 import { defineStore, mapActions } from "pinia";
+import { useEditorStore } from '@/stores/editorStore';
+import { useSessionStore } from '@/stores/sessionStore';
+import { useSiteStore } from '@/stores/siteStore';
+import { useStatStore } from '@/stores/statStore';
 const SERVER = ""
 // const SERVER = "http://localhost"
 
-export const useUserStore = defineStore({
-  id: "userStore",
+type User = {
+  user_type:String
+  shortlinksPkg: boolean;
+};
+
+type UserInfo = {
+
+}
+
+type UserNotification = {
+  notificationID : number
+}
+type UserStoreState = {
+  user: User | null;
+  authenticated: boolean;
+  notifications : UserNotification[] | null
+  newNotifications : UserNotification[] | null
+  enabledNotificationSound: boolean,
+  enableLogsAsHome: boolean,
+  notificationsSeen: Set<number>,
+  memo: string,
+  themeClass: string,
+  allUsers: UserInfo[] | null
+};
+
+export const useUserStore = defineStore("userStore",{
   state: () => {
     let authenticated=false;
     let enabledNotificationSound=false;
@@ -14,7 +42,7 @@ export const useUserStore = defineStore({
       enabledNotificationSound=true;
     }
     
-    return {
+    let state:UserStoreState={
         authenticated,
         user:null,
         notifications:null,
@@ -26,6 +54,7 @@ export const useUserStore = defineStore({
         enableLogsAsHome : false,
         allUsers : [],
     }
+    return state;
   },
   actions:{
     async logout(){
@@ -34,13 +63,20 @@ export const useUserStore = defineStore({
         body: "",
         credentials: 'include'
       }
-      let response=await fetch(SERVER+'/portal/logout.php',options);
+      let response=await fetch(SERVER+'/portal/logout.php',options as RequestInit);
       if(response.ok){
         let responseData=await response.json()
         if(responseData.status=="ok"){
           this.authenticated=false;
           localStorage.clear()
           this.user=null;
+          //const editorStore = useEditorStore();
+    			const sessionStore = useSessionStore();
+    			const statStore = useStatStore();
+    			const siteStore = useSiteStore();
+    			sessionStore.$reset();
+    			siteStore.$reset();
+    			statStore.$reset();
         }
         return responseData;
       }
@@ -52,7 +88,7 @@ export const useUserStore = defineStore({
       }
     },
 
-    async login(username,password){
+    async login(username:string,password:string){
       if(!username || !password){
         return;
       }
@@ -68,12 +104,12 @@ export const useUserStore = defineStore({
         credentials: 'include'
       }
       try{
-        let response=await fetch(SERVER+'/portal/logincheck.php',options);
+        let response=await fetch(SERVER+'/portal/logincheck.php',options as RequestInit);
         if(response.ok){
           let responseData=await response.json()
           if(responseData.status=="ok"){
             this.authenticated=true;
-            localStorage.setItem("authenticated",true)
+            localStorage.setItem("authenticated",'1')
           }
           return responseData;
         }
@@ -93,7 +129,7 @@ export const useUserStore = defineStore({
       }
     },
     
-    async register(username,password,telegram,referal){
+    async register(username:string,password:string,telegram:string,referal:string){
       if(!username || !password){
         return;
       }
@@ -108,7 +144,7 @@ export const useUserStore = defineStore({
         credentials: 'include'
       }
       try{
-        let response=await fetch(SERVER+'/portal/register.php',options);
+        let response=await fetch(SERVER+'/portal/register.php',options as RequestInit);
         if(response.ok){
           let responseData=await response.json()
           if(responseData.status=="ok"){
@@ -137,7 +173,7 @@ export const useUserStore = defineStore({
         credentials: 'include'
       }
       try{
-        let response=await fetch(SERVER+'/portal/userinfo.php',options);
+        let response=await fetch(SERVER+'/portal/userinfo.php',options as RequestInit);
         if(response.ok){
           let responseData=await response.json()
           if(responseData.status=="ok"){
@@ -174,7 +210,7 @@ export const useUserStore = defineStore({
       }
     },
     
-    async saveUserInfo(currentPassword,updatedInfo){
+    async saveUserInfo(currentPassword:string,updatedInfo:any){
       // if(!currentPassword){
       //   return;
       // }
@@ -192,7 +228,7 @@ export const useUserStore = defineStore({
         credentials: 'include'
       }
       try{
-        let response=await fetch(SERVER+'/portal/saveUserInfo.php',options);
+        let response=await fetch(SERVER+'/portal/saveUserInfo.php',options as RequestInit);
         if(response.ok){
           let responseData=await response.json()
           this.getUserInfo()
@@ -221,7 +257,7 @@ export const useUserStore = defineStore({
         credentials: 'include'
       }
       try{
-        let response=await fetch(SERVER+'/portal/usersinfo.php',options);
+        let response=await fetch(SERVER+'/portal/usersinfo.php',options as RequestInit);
         if(response.ok){
           let responseData=await response.json()
           if(responseData.status=="ok"){
@@ -256,7 +292,7 @@ export const useUserStore = defineStore({
     },
 
     // Update user memo
-    async saveMemo(memo){
+    async saveMemo(memo:string){
       let data=new FormData();
       data.append("memo", btoa(memo));
 
@@ -266,7 +302,7 @@ export const useUserStore = defineStore({
         credentials: 'include'
       }
       try{
-        let response=await fetch(SERVER+'/portal/saveUserMemo.php',options);
+        let response=await fetch(SERVER+'/portal/saveUserMemo.php',options as RequestInit);
         if(response.ok){
           let responseData=await response.json()
           this.getUserInfo()
@@ -290,7 +326,7 @@ export const useUserStore = defineStore({
 
 
     // Update Theme Color
-    async saveThemeColor(colorClass){
+    async saveThemeColor(colorClass:string){
       let data=new FormData();
       data.append("color", colorClass);
 
@@ -300,7 +336,7 @@ export const useUserStore = defineStore({
         credentials: 'include'
       }
       try{
-        let response=await fetch(SERVER+'/portal/saveUserTheme.php',options);
+        let response=await fetch(SERVER+'/portal/saveUserTheme.php',options as RequestInit);
         if(response.ok){
           let responseData=await response.json()
           this.getUserInfo()
@@ -324,7 +360,7 @@ export const useUserStore = defineStore({
 
 
     // Update Theme Color
-    async saveEnableLogs(enableLogs){
+    async saveEnableLogs(enableLogs:string){
       let data=new FormData();
       data.append("enableLogs", enableLogs);
 
@@ -334,7 +370,7 @@ export const useUserStore = defineStore({
         credentials: 'include'
       }
       try{
-        let response=await fetch(SERVER+'/portal/saveUserEnableLogs.php',options);
+        let response=await fetch(SERVER+'/portal/saveUserEnableLogs.php',options as RequestInit);
         if(response.ok){
           let responseData=await response.json()
           this.getUserInfo()
@@ -362,11 +398,11 @@ export const useUserStore = defineStore({
         credentials: 'include'
       }
       try{
-        let response=await fetch(SERVER+'/portal/notifications.php',options);
+        let response=await fetch(SERVER+'/portal/notifications.php',options as RequestInit);
         if(response.ok){
           let responseData=await response.json()
           if(responseData.status=="ok"){
-            let newNotifications=responseData.notifications.filter(notification => {
+            let newNotifications=responseData.notifications.filter((notification:UserNotification) => {
               if(!this.notificationsSeen.has(notification.notificationID)){
                   this.notificationsSeen.add(notification.notificationID)
                   return notification;
@@ -415,7 +451,7 @@ export const useUserStore = defineStore({
         method: 'POST'
       }
       try{
-        let response=await fetch(SERVER+'/portal/notifications.php',options);
+        let response=await fetch(SERVER+'/portal/notifications.php',options as RequestInit);
         if(response.ok){
           let responseData=await response.json()
           return responseData;

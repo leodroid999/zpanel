@@ -1,9 +1,10 @@
 import { createApp } from 'vue';
+import {createBootstrap} from 'bootstrap-vue-next'
 import { createPinia } from 'pinia';
 import { Vue3ProgressPlugin } from '@marcoschulte/vue3-progress';
-import PerfectScrollbar from 'vue3-perfect-scrollbar';
+import { PerfectScrollbarPlugin } from 'vue3-perfect-scrollbar';
+import 'vue3-perfect-scrollbar/style.css';
 import mitt from 'mitt';
-import 'vue3-perfect-scrollbar/dist/vue3-perfect-scrollbar.css';
 import '@marcoschulte/vue3-progress/dist/index.css';
 import '@fortawesome/fontawesome-free/scss/fontawesome.scss';
 import '@fortawesome/fontawesome-free/scss/regular.scss';
@@ -12,13 +13,15 @@ import '@fortawesome/fontawesome-free/scss/brands.scss';
 import '@fortawesome/fontawesome-free/scss/v4-shims.scss';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import 'bootstrap';
-import 'bootstrap-vue';
+import 'bootstrap/dist/css/bootstrap.css'
+import 'bootstrap-vue-next/dist/bootstrap-vue-next.css'
+
 import './scss/styles.scss';
 
 import 'bootstrap-vue-next/dist/bootstrap-vue-next.css'
 
 import App from './App.vue';
-import router from './router';
+import router from '@/router/';
 
 import Card from '@/components/bootstrap/Card.vue';
 import CardBody from '@/components/bootstrap/CardBody.vue';
@@ -40,9 +43,10 @@ app.component('CardImgOverlay', CardImgOverlay);
 app.component('CardExpandToggler', CardExpandToggler);
 
 app.use(createPinia());
+app.use(createBootstrap);
 app.use(router);
 app.use(Vue3ProgressPlugin);
-app.use(PerfectScrollbar);
+app.use(PerfectScrollbarPlugin);
 
 
 app.config.globalProperties.emitter = emitter;

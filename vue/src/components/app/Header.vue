@@ -88,7 +88,7 @@ export default {
 			this.$router.push({ path: '/login' })
 		},
 		logout: function () {
-			const userStore = useUserStore()
+			const userStore = useUserStore();
 			userStore.logout();
 			document.cookie = "";
 			this.$router.push({ path: '/login' })

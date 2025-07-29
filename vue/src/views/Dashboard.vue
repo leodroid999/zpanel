@@ -4,8 +4,8 @@ import { useStatStore } from '@/stores/statStore';
 import { useSessionStore } from '@/stores/sessionStore';
 import apexchart from '@/components/plugins/Apexcharts.vue';
 import jsVectorMap from 'jsvectormap';
-import 'jsvectormap/dist/maps/world.js';
-import 'jsvectormap/dist/css/jsvectormap.min.css';
+import 'jsvectormap/dist/jsvectormap.js';
+import 'jsvectormap/dist/jsvectormap.min.css';
 import { ref } from 'vue'
 import { useUserStore } from '@/stores/userStore';
 import { useSiteWidgetStore } from '@/stores/siteWidgetStore';
@@ -239,7 +239,7 @@ export default {
 			return siteWidgetStore.sites
 		}
 	},
-	mounted() {
+	async mounted() {
 
 		// Theme Color from database
 		if (userStore.authenticated && !userStore.user) {
@@ -252,7 +252,13 @@ export default {
 		this.setThemeClass(localStorage.appThemeClass);
 
 
-		sessionStore.getPanelList(false);
+		await sessionStore.getPanelList(false);
+		if(sessionStore && sessionStore.panels){
+			console.log(sessionStore.panels)
+			let panel = sessionStore.panels[0];
+			sessionStore.selectedPanelName = panel.panelId + '@' + panel.nodeId;
+			this.onPanelChanged()
+		}
 		sessionStore.$subscribe((mutation) => {
 			let ev = mutation.events;
 			if (ev && ev.key == "selectedPanel" && ev.oldValue != ev.newValue) {
@@ -360,7 +366,7 @@ export default {
 <template>
 	<select class="panel-select" @change="onPanelSelect($event)" v-model="selectedPanelName" :value="selectedPanelName">
 		<option v-if="panels" v-for="panel in panels" :value="panel.panelId + '@' + panel.nodeID">{{ panel.panelId }} @
-			{{ panel.nodeID }}</option>
+			{{ panel.NodeName }}</option>
 		<option disabled v-if="!panels" value="no panels"></option>
 	</select>
 	<div class="row" v-if="renderComponent">

@@ -25,11 +25,11 @@ var themeList = [
 ];
 
 var coverList = [
-	{ name: 'Default', coverThumbImage: '/assets/img/cover/cover-thumb-1.jpg', coverClass: ''},
-	{ name: 'Cover 2', coverThumbImage: '/assets/img/cover/cover-thumb-2.jpg', coverClass: 'bg-cover-2'},
-	{ name: 'Cover 3', coverThumbImage: '/assets/img/cover/cover-thumb-3.jpg', coverClass: 'bg-cover-3'},
-	{ name: 'Cover 4', coverThumbImage: '/assets/img/cover/cover-thumb-4.jpg', coverClass: 'bg-cover-4'},
-	{ name: 'Cover 5', coverThumbImage: '/assets/img/cover/cover-thumb-5.jpg', coverClass: 'bg-cover-5'}
+	{ name: 'Default', coverThumbImage: '@/assets/img/cover/cover-thumb-1.jpg', coverClass: ''},
+	{ name: 'Cover 2', coverThumbImage: '@/assets/img/cover/cover-thumb-2.jpg', coverClass: 'bg-cover-2'},
+	{ name: 'Cover 3', coverThumbImage: '@/assets/img/cover/cover-thumb-3.jpg', coverClass: 'bg-cover-3'},
+	{ name: 'Cover 4', coverThumbImage: '@/assets/img/cover/cover-thumb-4.jpg', coverClass: 'bg-cover-4'},
+	{ name: 'Cover 5', coverThumbImage: '@/assets/img/cover/cover-thumb-5.jpg', coverClass: 'bg-cover-5'}
 ]
 
 function appThemePanelToggled(event) {

@@ -32,10 +32,9 @@ function subIsActive(urls) {
 }
 
 function clickMenuItem(){
-	if(window.innerWidth<768.92){
-		(document.getElementsByClassName("app")[0]).classList.add("app-sidebar-mobile-toggled");
-	}
+	useAppOptionStore().appSidebarMobileToggled=true;
 }
+
 </script>
 <template>
 	<!-- menu with submenu -->

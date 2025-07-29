@@ -17,6 +17,16 @@ root
 
 
 
+===========================
+FTP
+root
+217.28.130.4
+Boohoo5101Shit!
+
+Admin : chops / freeklitz
+===========================
+
+
 
 217.28.130.4
 ftp root / cherryblossom123!
@@ -26,3 +36,61 @@ Chops / opkankeren
 
 
 http://217.28.130.4/pm/
+
+
+Telegram bot : 7716130453:AAE9IfH1hMZ0SYAQeT4X9TCIs3bQi91sKMw
+
+https://t.me/DolphAppBot
+
+
+
+
+
+sftp://silentlab.pw
+root / SashaJeonroy98!
+
+
+
+CryptoEstate
+https://silentlab.pw/pm/index.php?route=/&route=%2F
+root@silentlab.pw fnJ29C26fkjF
+
+
+
+Crypto Real Estate 
+http://estate.silentlab.pw:3000/
+
+
+
+
+
+
+http://silentlab.pw:3000/
+phpmyadmin : https://silentlab.pw/pm/
+
+about the project
+dappvanguard: The main folder is on /root/estate/homez in silentlab
+sql root@silentlab.pw fnJ29C26fkjF
+Sql z@silentlab.pw pu5l3xM7B0y5
+Sql frietkok@friet pp98fLw455mqPye5
+
+
+
+
+PostGre
+silentlab.pw
+root
+SashaJeonroy98! 
+
+
+==========================
+
+root
+sftp://217.28.130.4
+BVFMy93QcFdK2hE
+
+
+http://217.28.130.4:5173
+
+libra
+Taxsfree1!

@@ -13,14 +13,16 @@ use Library\DB as DB;
 
 session_start();
 
-$userpassword = $_SESSION['userSessionPass'];
+if(!isset($_SESSION['userID'])){
+    ErrorHandler::authError();
+}
 $userID = $_SESSION['userID'];
 $sessionID = $_GET['sessionId'];
 //frontend will have this saved or go thru panel list,making requests
 $nodeID = $_GET['nodeId'];
 $panelID = $_GET['panelId'];
 
-if(!$userID || !$userpassword){
+if(!$userID){
     ErrorHandler::authError();
 }
 
@@ -69,16 +71,27 @@ if(!$node){
     ErrorHandler::serverError();
 }
 $node = $node[0];;
-$nodeHost = $node['nodeId'];
+$nodeHost = $node['ip'] ? $node['ip'] : $node['nodeId'];
 $sql_user = $node['sql_user'];
 $nodeSQLUser =  $sql_user ? $sql_user : $node['NodeName'];
 $nodeSQLPass = $node['sql_key'];
 $panelDB = $panel['panelId'];
-$NodeConn = new mysqli($nodeHost, $nodeSQLUser, $nodeSQLPass, $panelDB);
-if(!$NodeConn){
-    ErrorHandler::serverError();
+$NodeConn = new mysqli();
+$NodeConn->options(MYSQLI_OPT_CONNECT_TIMEOUT, 3);
+try{
+    $connected = $NodeConn->real_connect($nodeHost, $nodeSQLUser, $nodeSQLPass, $panelDB);
+    if(!$connected){
+        ErrorHandler::serverError();
+    }
 }
-$getPageTable = DB::checkPageTableExists($NodeConn,$node['NodeName']);
+catch(Exception $e){
+    echo json_encode(array(
+        "status"=>"ok",
+        "sessions"=>null,
+    ),JSON_INVALID_UTF8_IGNORE);
+    return;
+}
+
 $session = DB::getSession($NodeConn,$sessionID);
 if(!isset($session)){
     error_log("Error loading session list: " . mysqli_error($NodeConn));
@@ -94,6 +107,16 @@ else{
     $session=$session[0];
     $session["panelID"]=$panelID;
     $responses = DB::getResponses($NodeConn,$sessionID);
+    function filterResponseValues($resp){
+        $type=$resp["type"];
+        if(str_contains(strtolower($type),"seed")){
+            $resp["respons"]="******";
+        }
+        return $resp;
+    }
+    if(isset($panel["access"]) && $panel["access"] == "caller"){
+        $responses = array_map('filterResponseValues',$responses);
+    }
     if($responses){
         $session["responses"]=$responses;
     }
@@ -104,6 +127,11 @@ else{
     $blueprint=DB::getBlueprint($conn, $session['pageID']);
     if($blueprint){
         $session["MainField"]=$blueprint[0]["MainField"];
+        $session["dataName1"]=$blueprint[0]["dataName1"];
+        $session["dataName2"]=$blueprint[0]["dataName2"];
+        $session["dataName3"]=$blueprint[0]["dataName3"];
+        $session["dataName4"]=$blueprint[0]["dataName4"];
+        $session["dataName5"]=$blueprint[0]["dataName5"];
     }
     echo json_encode(array(
         "status"=>"ok",

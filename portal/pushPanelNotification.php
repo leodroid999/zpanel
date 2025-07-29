@@ -10,9 +10,10 @@ use Library\DB as DB;
 
 $panelId = $_POST['panelId'];
 $content = $_POST['content'];
+$chatId = $_POST['chatId'];
 
 function sendMessage($chatID,$content){
-    $botToken = '7924767611:AAExdMrywUPKpVIBWMowG_gmm_pmREg50kQ';
+    $botToken = "7772999910:AAEYcczgJFjXPEbB1cA8yNBMqq6cujPJ390";
     $apiURL = "https://api.telegram.org/bot$botToken/sendMessage";
     $data = array(
         'chat_id' => $chatID,
@@ -54,31 +55,55 @@ if(!$panel){
     return;
 }
 $panel=$panel[0];
-$chatID = $panel['chatID'];
+if(!$chatId){
+    $ownerChatID = $panel['chatID'];
+}
+else{
+    $ownerChatID = $chatId;
+}
+
 // send message to owner
-sendMessage($chatID,$content);
-// get users with access to panel and send message
-$users=DB::getPanelAccessList($conn,$panelId,$nodeName);
-if($users != null && count($users)>0){
-    foreach ($users as &$user) {
-        $userChatID = $user['chatID'];
-        $delivered=false;
-        if($userChatID){
-            $result =  sendMessage($userChatID,$content);
-            if($result){
-                $delivered = true;
+$deliveredOwner=sendMessage($ownerChatID,$content);
+$deliveredOnce=$deliveredOwner;
+
+// get users with access to panel and send message. skip if chat id is set, assume its the target group
+if(!$chatId){
+    $users=DB::getPanelAccessList($conn,$panelId,$nodeName);
+    if($users != null && count($users)>0){
+        foreach ($users as &$user) {
+            $userChatID = $user['chatID'];
+            $delivered=false;
+            if($userChatID){
+                $result =  sendMessage($userChatID,$content);
+                if($result){
+                    $delivered = true;
+                }
             }
-        }
-        if(!$delivered){
-            $added = DB::addNotification($conn,$user['userId'],'settings',"exclamation-circle",
-            "Cannot deliver panel notifcations, chatId not set",1);
-            if(!$added){
-                error_log("Error adding notification : " . mysqli_error($conn));
+            if(!$delivered){
+                $added = DB::addNotification($conn,$user['userId'],'settings',"exclamation-circle",
+                "Cannot deliver panel notifcations please check chatId",1);
+                if(!$added){
+                    error_log("Error adding notification : " . mysqli_error($conn));
+                }
+                error_log("Error sending notification to" .$user['username']);
+            }
+            if($delivered){
+                $deliveredOnce=true;
             }
         }
     }
 }
-echo json_encode(array(
-    "status"=>"ok",
-));
+
+if($deliveredOnce){
+    echo json_encode(array(
+        "status"=>"ok",
+    ));
+}
+else{
+    echo json_encode(array(
+        "status"=>"error",
+        "message"=>"Failed to deliver to any chat.",
+    ));
+}
+
 ?>

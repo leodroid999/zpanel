@@ -15,7 +15,7 @@ session_start();
 
 $userpassword = $_SESSION['userSessionPass'];
 $userID = $_SESSION['userID'];
-$nodeID = $_GET['nodeId'];
+$nodeName = $_GET['nodeName'];
 $panelID = $_GET['panelId'];
 $filter = null;
 
@@ -23,7 +23,7 @@ if(!$userID || !$userpassword){
     ErrorHandler::authError();
 }
 
-if(!$nodeID || !$panelID){
+if(!$nodeName || !$panelID){
     ErrorHandler::serverError();
 }
 
@@ -48,7 +48,7 @@ if(!$user){
 }
 
 $user=$user[0];
-$panel = DB::getPanel($conn,$user,$panelID,$nodeID);
+$panel = DB::getPanel($conn,$user,$panelID,$nodeName);
 if($panel==null){
     $panel = DB::getPanelAddedToById($conn,$user,$panelID);
 }
@@ -57,25 +57,38 @@ if($panel==null){
 }
 if($panel){
     $panel=$panel[0];
-    if(isset($panel['nodeID'])){
-        $panel["nodeId"] = $panel["nodeID"];
+    if(isset($panel['nodeName'])){
+        $panel["nodeName"] = $panel["nodeName"];
     }
 }
 
-$node = DB::getNodeById($conn,$panel["nodeId"]);
+$node = DB::getNode($conn,$nodeName);
 if(!$node){
     ErrorHandler::serverError();
 }
 $node = $node[0];
-$nodeHost = $node['nodeId'];
+$nodeHost = $node['ip'] ? $node['ip'] : $node['nodeId'];
 $sql_user = $node['sql_user'];
 $nodeSQLUser =  $sql_user ? $sql_user : $node['NodeName'];
 $nodeSQLPass = $node['sql_key'];
 $panelDB = $panel['panelId'];
-$NodeConn = new mysqli($nodeHost, $nodeSQLUser, $nodeSQLPass, $panelDB);
-if(!$NodeConn){
-    ErrorHandler::serverError();
+
+$NodeConn = new mysqli();
+$NodeConn->options(MYSQLI_OPT_CONNECT_TIMEOUT, 3);
+try{
+    $connected = $NodeConn->real_connect($nodeHost, $nodeSQLUser, $nodeSQLPass, $panelDB);
+    if(!$connected){
+        ErrorHandler::serverError();
+    }
 }
+catch(Exception $e){
+    echo json_encode(array(
+        "status"=>"ok",
+        "sessions"=>[],
+    ),JSON_INVALID_UTF8_IGNORE);
+    return;
+}
+
 
 $sessions = DB::getSessions($NodeConn,$filter);
 if(!$sessions===null){

@@ -28,7 +28,7 @@ const router = createRouter({
     { path: '/logs', component: () => import('../views/Logs.vue') , ...AUTH_REQUIRED },
     { path: '/settings', component: () => import('../views/Settings.vue') , ...AUTH_REQUIRED },
     { path: '/wallet', component: () => import('../views/Wallet.vue'), ...AUTH_REQUIRED },
-    { path: '/order', component: () => import('../views/Order.vue'), ...AUTH_REQUIRED },
+    // { path: '/order', component: () => import('../views/Order.vue'), ...AUTH_REQUIRED },
     { path: '/register', component: () => import('../views/PageRegister.vue')},
     { path: '/dashboard', component: () => import('../views/Dashboard.vue'), alias: "/", ...AUTH_REQUIRED },
     { path: '/panels', component: () => import('../views/Panels.vue'), ...AUTH_REQUIRED },
@@ -42,7 +42,7 @@ const router = createRouter({
     { path: '/shop/', component: () => import('../views/Shop-Market.vue'), ...AUTH_REQUIRED  },
     { path: '/shop/:id', component: () => import('../views/Shop-Market.vue'), ...AUTH_REQUIRED  },
     { path: '/scripts', component: () => import('../views/Admin-Scripts.vue'), ...ADMIN_REQUIRED  },
-    { path: '/editor/edit', component: () => import('../views/EditPage.vue'), ...ADMIN_REQUIRED  },
+    // { path: '/editor/edit', component: () => import('../views/EditPage.vue'), ...ADMIN_REQUIRED  },
     { path: '/editor/edit/:id', component: () => import('../views/EditPage.vue'), ...ADMIN_REQUIRED  },
     { path: '/editor', component: () => import('../views/Page-Editor.vue'), ...ADMIN_REQUIRED  },
     { path: '/collaps', component: () => import('../views/LayoutCollapsedSidebar.vue'), ...ADMIN_REQUIRED  },
@@ -100,7 +100,7 @@ router.beforeEach(async(to, from, next) => {
       if(!userStore.user){
         let result=await userStore.getUserInfo();
       }
-      if (useUserStore.user && userStore.user.user_type!="admin") {
+      if (userStore.user && userStore.user.user_type!="admin") {
         next({
           path: "/",
           params: { nextUrl: to.fullPath },

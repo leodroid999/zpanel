@@ -41,7 +41,11 @@ let baseMenu = [
     icon: "bi bi-hdd-network",
     text: "My Panels",
   },
-  /*
+  /*{
+    url: "/tools",
+    icon: "bi bi-tools",
+    text: "Tools",
+  },
   {
     icon: "bi bi-shop",
     text: "Shop",
@@ -151,8 +155,7 @@ const shortlinkOptions = [
     text: "Shortlink Manager",
   },
 ];
-export const useAppSidebarMenuStore = defineStore({
-  id: "appSidebarMenu",
+export const useAppSidebarMenuStore = defineStore("appSidebarMenu",{
   actions: {
     reloadMenu: function () {
       const userStore = useUserStore();

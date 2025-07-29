@@ -61,7 +61,7 @@ if(!$node){
     ErrorHandler::serverError();
 }
 $node = $node[0];
-$nodeHost = $node['nodeId'];
+$nodeHost = $node['ip'] ? $node['ip'] : $node['nodeId'];
 $sql_user = $node['sql_user'];
 $nodeSQLUser =  $sql_user ? $sql_user : $node['NodeName'];
 $nodeSQLPass = $node['sql_key'];

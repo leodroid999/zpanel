@@ -1,7 +1,6 @@
 import { defineStore } from "pinia";
 
-export const useAppVariableStore = defineStore({
-  id: "appVariable",
+export const useAppVariableStore = defineStore("appVariable",{
   state: () => {
     return {
 			font: {

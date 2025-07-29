@@ -1,8 +1,7 @@
 import { defineStore, mapActions } from "pinia";
 const SERVER = ""
 
-export const useSiteWidgetStore= defineStore({
-  id: "siteWidgetStore",
+export const useSiteWidgetStore= defineStore("siteWidgetStore",{
   state: () => {
     return {
         sites:null,

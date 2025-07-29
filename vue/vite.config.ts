@@ -15,6 +15,14 @@ export default defineConfig({
       resolvers: [BootstrapVueNextResolver()],
     }),
   ],
+  build:{
+    target:"es2020"
+  },
+  server: {
+     proxy: {
+       "/portal" : "http://localhost"
+     }
+  },
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),

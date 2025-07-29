@@ -11,8 +11,7 @@ interface AdminStoreState {
   scriptOutput:string
 }
 
-export const useAStore = defineStore({
-  id: "aStore",
+export const useAStore = defineStore("aStore",{
   state: () => {
     return {
       panels:null,

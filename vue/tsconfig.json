@@ -1,13 +1,15 @@
 {
   "files": [],
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"],
+  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue", "main.ts"],
   "compilerOptions": {
     "composite": true,
     "allowJs": true,
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
-    }
+    },
+    "module": "node16",
+    "moduleResolution": "node16"
   },
   "references": [
     {

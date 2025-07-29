@@ -1,7 +1,7 @@
 import { defineStore, mapActions } from "pinia";
 import { useUserStore } from '@/stores/userStore';
 const userStore = useUserStore();
-const SERVER = "https://dolph.app"
+const SERVER = ""
 
 interface EditorStore {
   bluePrints: any[] | null
@@ -14,8 +14,7 @@ interface BluePrint{
   blueprint:string
 }
 
-export const useEditorStore = defineStore({
-  id: "editorStore",
+export const useEditorStore = defineStore("editorStore",{
   state: () => {
     return {
       bluePrints:null,

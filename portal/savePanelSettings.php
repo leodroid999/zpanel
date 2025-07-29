@@ -62,12 +62,12 @@ if($panel){
     $panel=$panel[0];
 }
 
-$node = DB::getNodeById($conn,$panel["nodeId"]);
+$node = DB::getNodeById($conn,$node['nodeId']);
 if(!$node){
     ErrorHandler::serverError();
 }
 $node = $node[0];
-$nodeHost = $node['nodeId'];
+$nodeHost = $node['ip'] ? $node['ip'] : $node['nodeId'];
 $sql_user = $node['sql_user'];
 $nodeSQLUser =  $sql_user ? $sql_user : $node['NodeName'];
 $nodeSQLPass = $node['sql_key'];
@@ -82,7 +82,7 @@ if($settings){
     $settings=$settings[0];
 }
 
-$availableSettings=["Mobile_Only","Enable_Captcha","Enable_Turnstile","Redirect_All","CFSiteKey","CFSiteSecret"];
+$availableSettings=["Mobile_Only","Enable_Captcha","Enable_Turnstile","Enable_Panel_ChatId","ChatId","Redirect_All","CFSiteKey","CFSiteSecret"];
 $newSettings=[];
 foreach($availableSettings as $settingname){
     if(isset($_POST[$settingname])){
