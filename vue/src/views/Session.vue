@@ -8,9 +8,9 @@ import { onMounted, ref } from "vue";
 import { Modal } from "bootstrap";
 import { RouterLink } from 'vue-router';
 import jsVectorMap from 'jsvectormap';
-import 'jsvectormap/dist/jsvectormap.js';
+//import 'jsvectormap/dist/jsvectormap.js';
 import 'jsvectormap/dist/jsvectormap.min.css';
-
+import 'jsvectormap/dist/maps/world.js';
 const appVariable = useAppVariableStore();
 const sessionStore = useSessionStore();
 const appOption = useAppOptionStore()
@@ -335,11 +335,18 @@ export default {
 			return "btn-h btn gap btn-outline-theme btn-sm"
 		},
 		async renderMap() {
+		  let x=Math.random()*100;
+		  x=x.toFixed(0);
 			let map_name = "world";
 			if (sessionStore.currentSession && sessionStore.currentSession.country) {
 				map_name = sessionStore.currentSession.country.toLowerCase() + "_merc"
 				let map_file = sessionStore.currentSession.country.toLowerCase() + "-merc"
-				await import("/public/assets/js/jquery-jvectormap-" + map_file + ".js")
+				try{
+				   await import(`../assets/maps/jquery-jvectormap-${map_file}.js`)
+				}
+				catch(e){
+				   map_name="world";
+				}
 			}
 			document.getElementById('map-container').innerHTML = '<div id="map"></div>';
 			let markers = this.getMarkerData();
@@ -406,7 +413,7 @@ export default {
 				if (!ev.oldValue) {
 					this.renderMap();
 				}
-				if (ev.oldValue && ev.oldValue.SessionId != ev.newValue.SessionId) {
+				if (ev.oldValue && ev.oldValue.SessionID != ev.newValue.SessionID) {
 					this.renderMap();
 				}
 			}
@@ -510,7 +517,7 @@ export default {
 </style>
 <template>
 	<ul class="breadcrumb">
-		<li class="breadcrumb-item"><a href="#">Z-panel</a></li>
+		<li class="breadcrumb-item"><a href="#">東-panel</a></li>
 		<li class="breadcrumb-item"><RouterLink to="/logs">Sessions</RouterLink></li>
 		<li class="breadcrumb-item active">{{ sessionId }}</li>
 	</ul>

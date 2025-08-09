@@ -17,7 +17,7 @@ export default {
 </script>
 <template>
     <ul class="breadcrumb">
-        <li class="breadcrumb-item"><a href="#">Z-panel</a></li>
+        <li class="breadcrumb-item"><a href="#">東-panel</a></li>
         <li class="breadcrumb-item active">Admin Menus</li>
     </ul>
     <h4 class="page-header">

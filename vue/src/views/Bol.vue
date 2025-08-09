@@ -65,7 +65,7 @@ export default {
 					</div>
 					<div class="opacity-10 margin-auto rounded" width="300">
 						
-						<img src="@/assets/img/dashboard/dot-graphic-contact-customer-service.svg" />
+						<!--  <img src="@/assets/img/dashboard/dot-graphic-contact-customer-service.svg" />  -->
 
 					</div>
 				</card-body>
@@ -86,7 +86,7 @@ export default {
 					</div>
 					<div class="opacity-10 margin-auto rounded" width="300">
 						
-						<img src="@/assets/img/dashboard/dot-graphic-megafoon.svg" />
+						<!-- <img src="@/assets/img/dashboard/dot-graphic-megafoon.svg" /> -->
 
 					</div>
 				</card-body>
@@ -107,7 +107,7 @@ export default {
 					</div>
 					<div class="opacity-10 margin-auto rounded" width="300">
 						
-						<img src="@/assets/img/dashboard/dot-graphic-doos-retour-midden-1.svg" />
+						<!--  <img src="@/assets/img/dashboard/dot-graphic-doos-retour-midden-1.svg" /> -->
 
 					</div>
 				</card-body>

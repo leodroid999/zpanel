@@ -166,7 +166,7 @@ export default {
 </style>
 <template>
     <ul class="breadcrumb">
-        <li class="breadcrumb-item"><a href="#">Z-panel</a></li>
+        <li class="breadcrumb-item"><a href="#">東-panel</a></li>
         <li class="breadcrumb-item">Admin</li>
         <li class="breadcrumb-item active">Scripts</li>
     </ul>

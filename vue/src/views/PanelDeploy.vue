@@ -2,7 +2,7 @@
     <div>
       <!-- Breadcrumbs -->
       <ul class="breadcrumb">
-        <li class="breadcrumb-item"><a href="#">Z-panel</a></li>
+        <li class="breadcrumb-item"><a href="#">東-panel</a></li>
         <li class="breadcrumb-item active">Memo</li>
       </ul>
   

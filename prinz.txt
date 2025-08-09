@@ -90,7 +90,16 @@ sftp://217.28.130.4
 BVFMy93QcFdK2hE
 
 
-http://217.28.130.4:5173
+Test here : http://217.28.130.4:5173
 
 libra
 Taxsfree1!
+
+
+namelyss.ru
+
+
+
+taxsfree 
+TaxsSQL83819
+http://217.28.130.4/pm/index.php?route=/sql&pos=0&db=testbase&table=users

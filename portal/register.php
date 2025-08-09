@@ -113,7 +113,7 @@ if (mysqli_num_rows($checkResult) > 0) {
     $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
     // Insert the user's information into the database
-    $insertQuery = "INSERT INTO users (userID, user_type, username, password, telegram) VALUES ('$userID', 'member', '$username', '$hashed_password', '$telegram')";
+    $insertQuery = "INSERT INTO users (userID, user_type, username, password, telegram, Enable_LogsAsHome) VALUES ('$userID', 'member', '$username', '$hashed_password', '$telegram', 1)";
 
     if (mysqli_query($conn, $insertQuery)) {
         

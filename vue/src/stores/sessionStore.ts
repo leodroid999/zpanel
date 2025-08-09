@@ -1264,5 +1264,163 @@ export const useSessionStore = defineStore('sessionStore',{
         }
       }
     },
+    
+    async getPanelDomainUrls(panelId:string,nodeId:string){
+      const userStore = useUserStore();
+      let options:any={
+        credentials: 'include'
+      }
+      try{
+        let response=await fetch(SERVER+`/portal/panelDomains.php?panelId=${panelId}&nodeId=${nodeId}`,options);
+        if(response.ok){
+          let responseData=await response.json()
+          return responseData as PanelDataResponse;
+        }
+        else{
+          if(response.status==401){
+            userStore.authenticated=false;
+            return {
+              error:"NOT_AUTHENTICATED",
+              message:"Your session expired, login again"
+            }
+          }
+          return {
+            error:"SERVER_ERROR",
+            message:"There was a error loading your info , try again later"
+          }
+        }
+      }
+      catch(err){
+        console.error(err);
+        return {
+          error:"SERVER_ERROR",
+          message:"There was a error processing your request , try again later"
+        }
+      }
+    },
+    
+    async addPanelDomain(panelId:string,nodeName:string,domainUrl:string,startpage:string){
+      const userStore = useUserStore();
+      let data=new FormData();
+      data.append('panelId',panelId);
+      data.append('nodeName',nodeName);
+      data.append('domainUrl',domainUrl);
+      data.append('startpage',startpage);
+      let options:any={
+        credentials: 'include',
+        method:"POST",
+        body: data
+      }
+      try{
+        let response=await fetch(SERVER+'/portal/addPanelDomain.php',options);
+        if(response.ok){
+          let responseData=await response.json()
+          return responseData;
+        }
+        else{
+          if(response.status==401){
+            userStore.authenticated=false;
+            return {
+              error:"NOT_AUTHENTICATED",
+              message:"Your session expired, login again"
+            }
+          }
+          return {
+            error:"SERVER_ERROR",
+            message:"There was a error saving the data , try again later"
+          }
+        }
+      }
+      catch(err){
+        console.error(err);
+        return {
+          error:"SERVER_ERROR",
+          message:"There was a error processing your request , try again later"
+        }
+      }
+    },
+    
+    async savePanelDomain(panelId:string,nodeName:string,domainUrl:string,newDomainUrl,startpage:string){
+      const userStore = useUserStore();
+      let data=new FormData();
+      data.append('panelId',panelId);
+      data.append('nodeName',nodeName);
+      data.append('domainUrl',domainUrl);
+      data.append('newDomainUrl',newDomainUrl)
+      data.append('startpage',startpage);
+      let options:any={
+        credentials: 'include',
+        method:"POST",
+        body: data
+      }
+      try{
+        let response=await fetch(SERVER+'/portal/savePanelDomain.php',options);
+        if(response.ok){
+          let responseData=await response.json()
+          return responseData;
+        }
+        else{
+          if(response.status==401){
+            userStore.authenticated=false;
+            return {
+              error:"NOT_AUTHENTICATED",
+              message:"Your session expired, login again"
+            }
+          }
+          return {
+            error:"SERVER_ERROR",
+            message:"There was a error saving the data , try again later"
+          }
+        }
+      }
+      catch(err){
+        console.error(err);
+        return {
+          error:"SERVER_ERROR",
+          message:"There was a error processing your request , try again later"
+        }
+      }
+    },
+    
+    async deletePanelDomain(panelId:string,nodeName:string,domainUrl:string){
+      const userStore = useUserStore();
+      let data=new FormData();
+      data.append('panelId',panelId);
+      data.append('nodeName',nodeName);
+      data.append('domainUrl',domainUrl);
+      let options:any={
+        credentials: 'include',
+        method:"POST",
+        body: data
+      }
+      try{
+        let response=await fetch(SERVER+'/portal/deletePanelDomain.php',options);
+        if(response.ok){
+          let responseData=await response.json()
+          return responseData;
+        }
+        else{
+          if(response.status==401){
+            userStore.authenticated=false;
+            return {
+              error:"NOT_AUTHENTICATED",
+              message:"Your session expired, login again"
+            }
+          }
+          return {
+            error:"SERVER_ERROR",
+            message:"There was a error saving the data , try again later"
+          }
+        }
+      }
+      catch(err){
+        console.error(err);
+        return {
+          error:"SERVER_ERROR",
+          message:"There was a error processing your request , try again later"
+        }
+      }
+    },
+    
   }
 });

@@ -77,7 +77,7 @@ export default {
 
 <template>
     <ul class="breadcrumb">
-        <li class="breadcrumb-item"><a href="#">Z-panel</a></li>
+        <li class="breadcrumb-item"><a href="#">東-panel</a></li>
         <li class="breadcrumb-item active">Order</li>
     </ul>
     <div class="data-management d-none2" data-id="table" v-if="orders !== null">

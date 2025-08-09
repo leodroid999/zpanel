@@ -4,8 +4,8 @@ import { useStatStore } from '@/stores/statStore';
 import { useSessionStore } from '@/stores/sessionStore';
 import apexchart from '@/components/plugins/Apexcharts.vue';
 import jsVectorMap from 'jsvectormap';
-import 'jsvectormap/dist/jsvectormap.js';
 import 'jsvectormap/dist/jsvectormap.min.css';
+import 'jsvectormap/dist/maps/world.js';
 import { ref } from 'vue'
 import { useUserStore } from '@/stores/userStore';
 import { useSiteWidgetStore } from '@/stores/siteWidgetStore';
@@ -112,7 +112,7 @@ export default {
 			siteWidgetStore.getWidgetSites();
 		},
 
-		renderMap() {
+		async renderMap() {
 			document.getElementById('map-container').innerHTML = '<div id="map"></div>';
 			var map = new jsVectorMap({
 				selector: '#map',
@@ -210,6 +210,38 @@ export default {
 			sessionStore.selectedPanel = sessionStore.panels.find((panel) => panel.panelId == panelId && panel.nodeID == nodeId)
 			sessionStore.selectedPanelName = selectedValue;
 			this.onPanelChanged();
+		},
+
+		async initialPanelSelect(){
+			let possibleSelections=[]
+			if(sessionStore.panels){
+				for(let panel of sessionStore.panels){
+					let panelStats = await statStore.getStats(panel.panelId, panel.nodeID);
+					if(panelStats && panelStats.stats){
+						possibleSelections.push({panel,stats:panelStats.stats})
+					}
+				}
+			}
+			let maxCount=-1;
+			let mostActivePanel=null
+			for(let sel of possibleSelections){
+				let selCount = 0;
+				if(sel.stats.locations && sel.stats.locations.length > 0){
+					selCount = sel.stats.locations.map(x =>x.Count).reduce((a,x)=>a+x)
+				}
+				if(selCount>maxCount){
+					maxCount = selCount
+					mostActivePanel = sel.panel
+				}
+			}
+			if(!mostActivePanel){
+			   mostActivePanel = sessionStore.panels[0];
+			}
+
+			await statStore.getStats(mostActivePanel.panelId,mostActivePanel.nodeID);
+			sessionStore.selectedPanel = mostActivePanel;
+			sessionStore.selectedPanelName = mostActivePanel.panelId + "@" + mostActivePanel.nodeID;
+			this.onPanelChanged();
 		}
 	},
 	computed: {
@@ -254,10 +286,7 @@ export default {
 
 		await sessionStore.getPanelList(false);
 		if(sessionStore && sessionStore.panels){
-			console.log(sessionStore.panels)
-			let panel = sessionStore.panels[0];
-			sessionStore.selectedPanelName = panel.panelId + '@' + panel.nodeId;
-			this.onPanelChanged()
+		    this.initialPanelSelect();
 		}
 		sessionStore.$subscribe((mutation) => {
 			let ev = mutation.events;
@@ -265,7 +294,7 @@ export default {
 				this.onPanelChanged()
 			}
 		})
-		statStore.$subscribe((mutation) => {
+		statStore.$subscribe(async (mutation) => {
 			this.renderMap();
 			this.renderOSChart();
 		})
@@ -524,7 +553,7 @@ export default {
 							<tbody>
 								<tr v-if="stats && stats.activity" v-for="item in stats.activity">
 									<td>
-										<i :class="'bi bi-' + item.icon"></i>
+										<i :class="'bi bi-' + item.icon ? item.icon : 'gear'"></i>
 										{{ item.content }}
 									</td>
 									<td><small>{{ timeAgo(item.time) }}</small></td>
@@ -532,8 +561,8 @@ export default {
 										<span class="badge d-block rounded-0 pt-5px w-70px"
 											v-bind:class="{ 'bg-theme text-theme-900': item.isAlerted, 'bg-inverse bg-opacity-25': !item.isAlerted }"
 											style="min-height: 18px">
-											{{ item.type.toUpperCase() }}
-										</span>
+											{{ item.type? item.type.toUpperCase() : "SYSTEM" }}
+										</span>.
 									</td>
 									<td><a href="#" class="text-decoration-none text-inverse"><i
 												class="bi bi-search"></i></a></td>

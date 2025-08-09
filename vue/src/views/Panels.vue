@@ -31,11 +31,14 @@ export default {
             panelSettingsModal: null,
             panelAccessModal: null,
             panelUniquelinksModal: null,
+            panelWalletModal: null,
             panelFileManagerModal: null,
             currentPanelSettings: null,
             currentPanelAccessList: null,
             currentPanelAccessUser: null,
             currentPanelUniquelinks: null,
+            currentPanelData: null,
+            currentPanelDomains: null,
             selectedPanel: null,
             selectedNode: null,
             selectedNodeDomain: null,
@@ -45,6 +48,7 @@ export default {
             hostPanelPassword: "",
             loadPanelDataError: false,
             loadPanelUniquelinksError: false,
+            loadPanelWalletDataError: false,
             loadPanelAccessListError: null,
             loadFileManagerError:null,
             currentUserSelected: null,
@@ -82,6 +86,32 @@ export default {
                 rows:[],
                 total:0
             },
+            walletTable:{
+                isLoading:false,
+                columns:[
+                    {
+                        label: "Token",
+                        field: "tokenId"
+                    },
+                    {
+                        label: "Address",
+                        field: "addr",
+                        columnClasses:["datacol"]
+                    },
+                    {
+                        label: "Balance",
+                        field: "bal",
+                        columnClasses:["datacol"]
+                    },
+                    {
+                        label: "Actions",
+                        field: "actions",
+                        columnClasses:["actionscol"]
+                    },
+                ],
+                rows:[],
+                total:0
+            },
             newUniquelinkData:"",
             newUniquelinkField:"email_address",
             editUniquelinkData:"",
@@ -90,8 +120,48 @@ export default {
             selectedUniquelink:null,
             searchBar:null,
             fileManagerToken:null,
-            
-        }
+            newWalletToken:"eth",
+            newWalletAddr:"",
+            newWalletBal:"0",
+            selectedWalletToken:"",
+            editWalletTokenAddr:"",
+            editWalletTokenBal:"",
+            walletTokenSaveMessage:"",
+            walletTokenAddMessage:"",
+            walletAccessLevel:"",
+            domainUrlTable:{
+                isLoading:false,
+                columns:[
+                    {
+                        label: "Domain/url",
+                        field: "domainUrl"
+                    },
+                    {
+                        label: "Destination",
+                        field: "startpage",
+                        columnClasses:["datacol"]
+                    },
+                    {
+                        label: "Actions",
+                        field: "actions",
+                        columnClasses:["actionscol"]
+                    },
+                ],
+                rows:[],
+                total:0
+            },
+            loadPanelDomainDataError:false,
+            newDomainUrl:"",
+            newDomainUrlDest:"",
+            selectedDomain:"",
+            selectedDomainUrl:"",
+            editDomainUrl:"",
+            editDomainDest:"",
+            newDomainUrl:"",
+            newDomainDest:"",
+            domainSaveMessage:"",
+            domainAddMessage:"",
+        }  
     },
     methods: {
         initLinkTable: function ({
@@ -155,6 +225,33 @@ export default {
             this.uniqueLinkTable.rows = rowData.slice(0,10);
             this.uniqueLinkTable.total = this.uniqueLinksFiltered.length;
         },
+        initWalletTable:function(){},
+        initWalletTableRows: function(data){
+          this.currentPanelData=data;
+          //alert
+          let datakeys=Object.keys(data);
+          //alert(JSON.stringify(datakeys));
+          let walletdatakeys=datakeys.filter(k => k.startsWith("vault"))
+          let tokens=new Set()
+          for(let key of walletdatakeys){
+            //alert(key);
+            let parts=key.split("_");
+            if(parts.length>=2){
+              tokens.add(parts[1]);
+            }
+          }
+          //let tokenList=Array.from(tokens);
+          let dataRows=[];
+          for(let token of tokens){
+             let tokenId=token;
+             let addr=data["vault_"+token+"_addr"] ? data["vault_"+token+"_addr"] : "";
+             let bal=data["vault_"+token+"_bal"] ? data["vault_"+token+"_bal"] : "0";
+             let tokenData={tokenId,addr,bal};
+             dataRows.push(tokenData)
+          }
+          this.walletTable.rows=dataRows;
+          this.walletTable.total=dataRows.length;
+        },
         filterLinks: function(term){
             this.uniqueLinksFiltered=this.currentPanelUniquelinks.filter(i => i.data.includes(term))
             this.uniqueLinkTable.rows = this.uniqueLinksFiltered.slice(0,10)
@@ -167,7 +264,7 @@ export default {
             await sessionStore.getPanelList(false,false);
         },
         loadPanelSettings: function () {
-            sessionStore.panels.forEach(async function (panel) {
+            sessionStore.panels.forEach(async (panel) => {
                 let data = await sessionStore.getPanelSettings(panel.panelId, panel.nodeID)
                 if (data.status == "ok") {
                     panel.settings = data.settings;
@@ -252,6 +349,57 @@ export default {
             }
             catch (e) {
                 this.loadPanelUniquelinksError = true
+            }
+        },
+        openPanelWalletModal: async function (access,panelName, nodeName) {
+            this.loadPanelDataError = false
+            this.currentPanelSettings = null;
+            this.settingSaveMessage = "";
+            this.selectedPanel = panelName;
+            this.selectedNode = nodeName;
+            this.panelWalletModal.show()
+            if(access=="caller"){
+              this.walletAccessLevel="bal";
+            }
+            else{
+              this.walletAccessLevel="full"
+            }
+            let panel = sessionStore.panels.find(item => item.panelId == panelName && item.NodeName == nodeName)
+            try {
+                let result = await sessionStore.getPanelData(panel.panelId, panel.nodeID)
+                if("status" in result && result.status == "ok"){
+                     
+                    this.initWalletTableRows(result.data)
+                } 
+                else {
+                  this.loadPanelWalletDataError= true
+                }
+            }
+            catch (e) {
+                this.loadPanelWalle5Error = true
+            }
+        },
+        openPanelDomainsModal: async function (panelName, nodeName) {
+            this.loadPanelDomainsDataError = false
+            this.domainSaveMessage = "";
+            this.domainAddMessage = "";
+            this.selectedPanel = panelName;
+            this.selectedNode = nodeName;
+            this.panelDomainsModal.show()
+            let panel = sessionStore.panels.find(item => item.panelId == panelName && item.NodeName == nodeName)
+            try {
+                let result = await sessionStore.getPanelDomainUrls(panel.panelId, panel.nodeID)
+                console.log(result);
+                if("status" in result && result.status == "ok"){
+                     
+                    this.initDomainTableRows(result.domainUrls)
+                } 
+                else {
+                  this.loadPanelDomainsDataError= true
+                }
+            }
+            catch (e) {
+                this.loadPanelDomainsDataError = true
             }
         },
         loadAccessList: async function () {
@@ -476,6 +624,249 @@ export default {
             link.href = url
             link.download = `${this.selectedPanel}-links.csv`
             link.click()
+        },
+        // Wallet
+        initLinkTable:async function(){},
+        clearAddWalletMsg: async function(){
+            setTimeout(()=>{
+                this.walletTokenAddMessage=""
+            },5000)
+        },
+        clearSaveWalletMsg: async function(){
+            setTimeout(()=>{
+                this.walletTokenSaveMessage=""
+            },5000)
+        },
+        clearDomainSaveMsg: async function(){
+            setTimeout(()=>{
+                this.domainSaveMessage=""
+            },5000)
+        },
+        clearDomainAddMsg: async function(){
+            setTimeout(()=>{
+                this.domainAddMessage=""
+            },5000)
+        },
+        addWallet: async function(){ 
+            this.walletTokenAddMessage = "Saving...";
+            if(!this.newWalletAddr){
+                this.walletTokenAddMessage="Error: Please enter the address"
+                this.clearAddWalletMsg();
+                return;
+            }
+   
+            if(Number.isNaN(parseFloat(this.newWalletBal))){
+                this.walletTokenAddMessag="Error: Balance value is not a number."
+                this.clearAddWalletMsg();
+                return;
+            }
+            if(!this.newWalletAddr){
+                this.walletTokenAddMessage="Error: No address set."
+                this.clearAddWalletMsg();
+                return;
+            }
+            let vaultkeys=Object.keys(this.currentPanelData).filter(k => k.startsWith("vault"));
+            let keytokens= vaultkeys.map(x =>  x.split("_").length > 2 ? x.split("_")[1] : null )
+            if(keytokens.includes(this.newWalletToken)){
+                this.walletTokenAddMessage="Error: The token is already added , edit it below."
+                this.clearAddWalletMsg();
+                return;
+            }
+
+            let result = await sessionStore.saveWalletToken(this.selectedPanel, this.selectedNode,this.newWalletToken,this.newWalletAddr,this.newWallet)
+            if ("status" in result && result.status == "ok") {
+                this.walletTokenAddMessage = "Saved"
+                let newTokenRow={
+                    tokenId:this.newWalletToken,
+                    addr:this.newWalletAddr,
+                    bal:this.newWalletBal}
+                this.walletTable.rows.unshift(newTokenRow);
+                this.currentPanelData["vault_"+this.newWalletToken+"_addr"]=this.newWalletAddr;
+                this.currentPanelData["vault_"+this.newWalletToken+"_bal"]=this.newWalletBal;
+            } else {
+                this.walletTokenAddMessage = result.message ? result.message : "error"
+            }
+            this.clearAddWalletMsg();
+        },
+        saveWalletItem: async function(){
+            //this.editTokenMessage="";
+            this.walletTokenSaveMessage = "Saving...";
+            if(!this.editWalletTokenAddr){
+                this.walletTokenSaveMessage="Error: No address set."
+                this.clearSaveWalletMsg();
+                return;
+            }
+            if(Number.isNaN(parseFloat(this.editWalletTokenBal))){
+               this.walletTokenSaveMessage="Error: Balance value is not a number."
+               this.clearSaveWalletMsg();
+               return;
+            }
+            if(this.editWalletTokenAddr==""){
+                this.editWalletTokenBal="0";
+            }
+
+            let result = await sessionStore.saveWalletToken(this.selectedPanel, this.selectedNode,this.selectedWalletToken,this.editWalletTokenAddr,this.editWalletTokenBal);
+            if ("status" in result ) {
+                this.domainSaveMessage = "Saved"
+                this.selectedWalletTokenData.addr = this.editWalletTokenAddr;
+                this.selectedWalletTokenData.bal = this.editWalletTokenBal;
+                this.selectedWalletToken = null
+                this.clearSaveWalletMsg();
+            } else {
+                this.walletTokenSaveMessage = result.message ? result.message : "error"
+                this.clearSaveWalletMsg();
+            }
+        },
+        cancelWalletItemEdit: async function(){ 
+            this.selectedWalletToken = null
+            this.walletTokenSaveMessage = "";
+        },
+        editWalletItem: async function(value){ 
+           this.selectedWalletToken=value.tokenId;
+           this.selectedWalletTokenData=value;
+           this.editWalletTokenAddr=value.addr;
+           this.editWalletTokenBal=value.bal;
+        },
+        deleteWalletItem: async function(token){
+            let result = await sessionStore.deleteWalletToken(this.selectedPanel, this.selectedNode,token)
+            if ("status" in result && result.status == "ok"){
+                this.walletTable.rows=this.walletTable.rows.filter(i => i.tokenId != token);
+                this.walletTokenSaveMessage="Deleted"
+                delete this.currentPanelData["vault_"+token+"_addr"];
+                delete this.currentPanelData["vault_"+token+"_bal"];
+                this.clearSaveWalletMsg();
+            }
+            else{
+                this.uniqueLinkAddMessage = result.message ? result.message : "error"
+                this.clearSaveWalletMsg();
+            }
+        },
+        doSearchWallet: async function(offset, limit, order, sort){
+            this.walletTable.rows=this.walletTable.slice(offset,offset+limit)
+        },
+        initDomainTableRows: async function(data){
+            this.currentPanelDomains=data;
+            this.domainUrlTable.rows=data;
+            this.domainUrlTable.total=data.length;
+        },
+        doSearchDomains: async function(offset, limit, order, sort){
+            this.domainUrlTable.rows=this.domainUrlTable.slice(offset,offset+limit)
+        },
+        editDomain: async function(value){ 
+           this.selectedDomain=value;
+           this.selectedDomainUrl=value.domainUrl;
+           this.editDomainUrl=value.domainUrl;
+           this.editDomainDest=value.startpage;
+        },
+        saveDomain: async function(){
+            this.domainSaveMessage = "Saving...";
+            if(!this.editDomainUrl){
+                this.domainSaveMessage="Error: No domain url set."
+                this.clearDomainSaveMsg();
+                return;
+            }
+            if(!this.editDomainDest){
+                this.domainSaveMessage="Error: No destination set."
+                this.clearDomainSaveMsg();
+                return;
+            }
+            if(!this.editDomainDest.startsWith("/")){
+                this.domainSaveMessage="Error: Destination must be a path from panel root, starting with /"
+                this.clearDomainSaveMsg();
+                return;
+            }
+            
+            if(this.editDomainDest=="/"){
+                this.domainSaveMessage="Error: Destination cannot be domain root."
+                this.clearDomainSaveMsg();
+                return;
+            }
+            
+            this.editDomainDest=this.editDomainDest
+              .replace("http://","")
+              .replace("https://","")
+
+            let result = await sessionStore.savePanelDomain(this.selectedPanel, this.selectedNode,this.selectedDomainUrl,this.editDomainUrl,this.editDomainDest);
+            if ("status" in result ) {
+                this.domainSaveMessage = "Saved"
+                this.selectedDomain.domainUrl = this.editDomainUrl;
+                this.selectedDomain.startpage= this.editDomainDest;
+                this.selectedDomainUrl = null
+                this.clearDomainSaveMsg();
+            } else {
+                this.domainSaveMessage = result.message ? result.message : "error"
+                this.clearDomainSaveMsg();
+            }
+        },
+        addDomain: async function(){
+            this.domainAddMessage = "Saving...";
+            if(!this.newDomainUrl){
+                this.domainAddMessage="Error: No domain url set."
+                this.clearDomainAddMsg();
+                return;
+            }
+            if(!this.newDomainDest){
+                this.domainAddMessage="Error: No destination set."
+                this.clearDomainAddMsg();
+                return;
+            }
+            if(!this.newDomainDest.startsWith("/")){
+                this.domainAddMessage="Error: Destination must be a path from panel root, starting with /"
+                this.clearDomainAddMsg();
+                return;
+            }
+            
+            if(this.newDomainDest=="/"){
+                this.domainAddMessage="Error: Destination cannot be domain root."
+                this.clearDomainAddMsg();
+                return;
+            }
+            
+            this.newDomainDest=this.newDomainDest
+              .replace("http://","")
+              .replace("https://","")
+              
+            let existing = this.currentPanelDomains.find(x => x.domainUrl.toLowerCase() == this.newDomainUrl.toLowerCase());
+          
+            if(existing){
+              this.domainAddMessage="the url already exists, edit below"
+              this.clearDomainAddMsg();
+              
+              return;
+            }
+            
+            let result = await sessionStore.addPanelDomain(this.selectedPanel, this.selectedNode,this.newDomainUrl,this.newDomainDest);
+            if ("status" in result && result.status=="ok") {
+                let newDomainRow = {
+                  domainUrl: this.newDomainUrl,
+                  startpage: this.newDomainDest
+                }
+                this.currentPanelDomains.unshift(newDomainRow);
+                this.initDomainTableRows(this.currentPanelDomains);
+                this.domainAddMessage="Added!";
+                this.clearDomainAddMsg();
+            } else {
+                this.domainAddMessage = result.message ? result.message : "error"
+                this.clearDomainAddMsg();
+            }
+        },
+        deleteDomain: async function(domainUrl){
+            let result = await sessionStore.deletePanelDomain(this.selectedPanel, this.selectedNode, domainUrl)
+            if ("status" in result && result.status == "ok"){
+                this.currentPanelDomains=this.currentPanelDomains.filter(i => i.domainUrl != domainUrl);
+                this.domainUrlTable.rows=this.domainUrlTable.rows.filter(i => i.domainUrl != domainUrl);
+                this.domainUrlTable.total-=1;
+                this.domainSaveMessage="Deleted"
+                this.clearDomainSaveMsg();
+            }
+            else{
+                this.domainSaveMessage = result.message ? result.message : "error"
+                this.clearSaveWalletMsg();
+            }
+        },
+        cancelDomainEdit: async function(){
+           this.selectedDomain=null;
+           this.selectedDomainUrl="";
         }
     },
     computed: {
@@ -523,7 +914,9 @@ export default {
         this.panelSettingsModal = new Modal(this.$refs.panelSettingsModal)
         this.panelAccessModal = new Modal(this.$refs.panelAccessModal)
         this.panelUniquelinksModal= new Modal(this.$refs.panelUniquelinksModal)
+        this.panelWalletModal = new Modal(this.$refs.panelWalletModal)
         this.panelFileManagerModal= new Modal(this.$refs.panelFileManagerModal)
+        this.panelDomainsModal = new Modal(this.$refs.panelDomainsModal)
     }
 }
 </script>
@@ -599,7 +992,7 @@ option{
 </style>
 <template>
     <ul class="breadcrumb">
-        <li class="breadcrumb-item"><a href="#">Z-panel</a></li>
+        <li class="breadcrumb-item"><a href="#">東-panel</a></li>
         <li class="breadcrumb-item active">Panels</li>
     </ul>
     <h4>Panels overview</h4>
@@ -635,6 +1028,14 @@ option{
                                     @click="openPanelUniquelinksModal(panel.panelId, panel.NodeName)"
                                     style="width: 30px; height: 30px; margin-right:2px;">
                                     <i class="fas me-2 fa-link"></i></button>
+                                <button v-if="panel.panelType && panel.panelType=='wallet'" class="btn btn-outline-success btn-sm"
+                                    @click="openPanelWalletModal(panel.access?panel.access : 'f' , panel.panelId, panel.NodeName)"
+                                    style="width: 30px; height: 30px; margin-right:2px;">
+                                    <i class="fas me-2 fa-wallet"></i></button>
+                                <button v-if="(!panel.access || panel.access=='full') && panel.panelType && panel.panelType=='wallet'" class="btn btn-outline-success btn-sm"
+                                    @click="openPanelDomainsModal(panel.panelId, panel.NodeName)"
+                                    style="width: 30px; height: 30px; margin-right:2px;">
+                                    <i class="fas me-2 fa-globe"></i></button>
                                 <button class="btn btn-outline-success btn-sm"
                                     @click="openPanelFileManagerModal(panel.panelId, panel.NodeName,panel.nodeID)"
                                     style="width: 30px; height: 30px; margin-right:2px;">
@@ -646,6 +1047,7 @@ option{
                                     @click="openPanelAccessModal(panel.panelId, panel.NodeName)"
                                     style="width: 30px; height: 30px; margin-right:2px; display: flex; justify-content: center;align-items: center;">
                                     <i class="fas fa-users"></i></button>
+                                
                             </div>
                         </div>
                     </div>
@@ -681,7 +1083,7 @@ option{
                                 <label class="form-label">Server Hostname</label>
                                 <div class="row row-space-10">
                                     <div class="col-8">
-                                        <input class="form-control" v-model="hostPanelHost">
+                                        <input class="form-control" v-model="hostPanelHost" disabled>
                                     </div>
                                 </div>
                             </div>
@@ -689,7 +1091,7 @@ option{
                                 <label class="form-label">Server Username</label>
                                 <div class="row row-space-10">
                                     <div class="col-8">
-                                        <input class="form-control" v-model="hostPanelUsername">
+                                        <input class="form-control" v-model="hostPanelUsername" disabled>
                                     </div>
                                 </div>
                             </div>
@@ -697,7 +1099,7 @@ option{
                                 <label class="form-label">Server Password</label>
                                 <div class="row row-space-10">
                                     <div class="col-8">
-                                        <input class="form-control" v-model="hostPanelPassword">
+                                        <input class="form-control" v-model="hostPanelPassword" disabled>
                                     </div>
                                 </div>
                             </div>
@@ -716,7 +1118,7 @@ option{
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-outline-default" data-bs-dismiss="modal">Close</button>
-                        <button type="button" class="btn btn-outline-theme" v-if="!showOutput"
+                        <button type="button" class="btn btn-outline-theme" v-if="!showOutput" disabled
                             @click="hostPanel">Send</button>
                     </div>
                 </div>
@@ -914,6 +1316,228 @@ option{
                             </div>
                             <div v-else>
                                 <h4>Error loading links</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-default" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal fade" id="modalPanelWallet" ref="panelWalletModal">
+            <div class="modal-dialog dialogLarge">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Wallet Address</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>
+                            Panel: {{ selectedPanel }} @ {{ selectedNode }}
+                        </p>
+                        <div v-if="currentPanelData">
+                            <div v-if="walletAccessLevel=='full'">
+                              <div class="mb-3">
+                                  <h5>Set Wallet</h5>
+                                  <label class="form-label">Token</label>
+                                  <div class="row row-space-10">
+                                      <div class="col-6">
+                                          <select class="form-control" v-model="newWalletToken">
+                                              <option value="eth">Ethererum</option>
+                                              <option value="sol">Solana</option>
+                                              <option value="btc">Bitcoin</option>
+                                              <option value="doge">DOGE</option>
+                                              <option value="trx">Tron</option>
+                                              <option value="trx">Ripple</option>
+                                              <option value="usdt">Tether</option>
+                                          </select>
+                                      </div>
+                                  </div>
+                              </div>
+                              <div class="mb-3">
+                                  <label class="form-label">Address</label>
+                                  <div class="row row-space-10">
+                                      <div class="col-6">
+                                          <input class="form-control" type="text" v-model="newWalletAddr"></input>
+                                      </div>
+                                  </div>
+                              </div>
+                              <div class="mb-3">
+                                  <label class="form-label">Balance</label>
+                                  <div class="row row-space-10">
+                                      <div class="col-6">
+                                          <input class="form-control" type="text" v-model="newWalletBal"></input>
+                                      </div>
+                                  </div>
+                              </div>
+                               <div class="mb-3">
+                                  <div class="col-4">
+                                      <button type="button" class="btn btn-outline-theme"
+                                          @click="addWallet()">Add</button>
+                                  </div>
+                              </div>
+                              <span>{{ this.walletTokenAddMessage}}</span>
+                            </div>
+                            <div class="mb-3">
+                                <span>{{ this.walletTokenSaveMessage }}</span>
+                                <div class="row row-space-10">
+                                    <div class="col-12">
+                                        <vue-table-lite class="vue-table"
+                                            :is-slot-mode="true"
+                                            :columns="walletTable.columns"
+                                            :rows="walletTable.rows"
+                                            :total="walletTable.total"
+                                            @VnodeMounted="initWalletTable"
+                                            @do-search="doSearchWallet">                     
+                                            <template v-slot:addr="data">
+                                                <div v-if="walletAccessLevel=='full' && selectedWalletToken && selectedWalletToken == data.value.tokenId">
+                                                    <div class="row row-space-10">
+                                                        <input type="text" class="dataedit" v-model="editWalletTokenAddr"/>
+                                                    </div>
+                                                </div>
+                                                <div v-else>
+                                                    {{data.value.addr}}
+                                                </div>
+                                            </template> 
+                                            <template v-slot:bal="data">
+                                                <div v-if="selectedWalletToken && selectedWalletToken == data.value.tokenId">
+                                                    <div class="row row-space-10">
+                                                        <input type="text" class="dataedit" v-model="editWalletTokenBal"/>
+                                                    </div>
+                                                </div>
+                                                <div v-else>
+                                                    {{data.value.bal}}
+                                                </div>
+                                            </template>
+                                            <template v-slot:actions="data">         
+                                                <div v-if="selectedWalletToken && selectedWalletToken== data.value.tokenId">
+                                                    <button type="button" class="btn btn-outline-theme" @click="saveWalletItem()">Save</button>
+                                                    <button type="button" class="btn btn-outline-danger mx-2" @click="cancelWalletItemEdit()">Cancel</button>
+                                                </div>
+                                                <div v-else>
+                                                    <button type="button" class="btn btn-outline-theme" @click="editWalletItem(data.value)">Edit</button>
+                                                    <button v-if="walletAccessLevel=='full'" type="button" class="btn btn-outline-danger mx-2" @click="deleteWalletItem(data.value.tokenId)">Delete</button>
+                                                </div>
+                                            </template>
+                                        </vue-table-lite>
+                                    </div>
+                                </div>
+                                
+                            </div>
+                        </div>
+                        
+                        <div v-else>
+                            <div v-if="!loadPanelWalletDataError">
+                                <h4>Loading wallet..</h4>
+                            </div>
+                            <div v-else>
+                                <h4>Error loading wallet</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-default" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal fade" id="modalPanelDomains" ref="panelDomainsModal">
+            <div class="modal-dialog dialogLarge">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Panel Domains / Urls</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>
+                            Panel: {{ selectedPanel }} @ {{ selectedNode }}
+                        </p>
+                        <div v-if="currentPanelDomains">
+                            <div>
+                              <div class="mb-3">
+                                  <h5>Add Url</h5>
+                              </div>
+                              <div class="mb-3">
+                                  <label class="form-label">Full URL</label>
+                                  <div class="row row-space-10">
+                                      <div class="col-6">
+                                          <input class="form-control" type="text" v-model="newDomainUrl"></input>
+                                      </div>
+                                  </div>
+                                  <small>example: domain.com/aaa. Must not be an existing page. </small>
+                              </div>
+                              <div class="mb-3">
+                                  <label class="form-label">Destination</label>
+                                  <div class="row row-space-10">
+                                      <div class="col-6">
+                                          <input class="form-control" type="text" v-model="newDomainDest"></input>
+                                      </div>
+                                  </div>
+                                  <small>examples: /page , /subpanel/page.  Must start with / </small>
+                              </div>
+                               <div class="mb-3">
+                                  <div class="col-4">
+                                      <button type="button" class="btn btn-outline-theme"
+                                          @click="addDomain()">Add</button>
+                                  </div>
+                              </div>
+                              <span>{{ this.domainAddMessage}}</span>
+                            </div>
+                            <div class="mb-3">
+                                <span>{{ this.domainSaveMessage }}</span>
+                                <div class="row row-space-10">
+                                    <div class="col-12">
+                                        <vue-table-lite class="vue-table"
+                                            :is-slot-mode="true"
+                                            :columns="domainUrlTable.columns"
+                                            :rows="domainUrlTable.rows"
+                                            :total="domainUrlTable.total"
+                                            @VnodeMounted="initWalletTable"
+                                            @do-search="doSearchDomains">                     
+                                            <template v-slot:domainUrl="data">
+                                                <div v-if="selectedDomainUrl && selectedDomainUrl == data.value.domainUrl">
+                                                    <div class="row row-space-10">
+                                                        <input type="text" class="dataedit" v-model="editDomainUrl"/>
+                                                    </div>
+                                                </div>
+                                                <div v-else>
+                                                    {{data.value.domainUrl}}
+                                                </div>
+                                            </template> 
+                                            <template v-slot:startpage="data">
+                                                <div v-if="selectedDomainUrl && selectedDomainUrl == data.value.domainUrl">
+                                                    <div class="row row-space-10">
+                                                        <input type="text" class="dataedit" v-model="editDomainDest"/>
+                                                    </div>
+                                                </div>
+                                                <div v-else>
+                                                    {{data.value.startpage}}
+                                                </div>
+                                            </template>
+                                            <template v-slot:actions="data">         
+                                                <div v-if="selectedDomainUrl && selectedDomainUrl == data.value.domainUrl">
+                                                    <button type="button" class="btn btn-outline-theme" @click="saveDomain()">Save</button>
+                                                    <button type="button" class="btn btn-outline-danger mx-2" @click="cancelDomainEdit()">Cancel</button>
+                                                </div>
+                                                <div v-else>
+                                                    <button type="button" class="btn btn-outline-theme" @click="editDomain(data.value)">Edit</button>
+                                                    <button type="button" class="btn btn-outline-danger mx-2" @click="deleteDomain(data.value.domainUrl)">Delete</button>
+                                                </div>
+                                            </template>
+                                        </vue-table-lite>
+                                    </div>
+                                </div>
+                                
+                            </div>
+                        </div>
+                        
+                        <div v-else>
+                            <div v-if="!loadPanelDomainDataError">
+                                <h4>Loading domains/urls..</h4>
+                            </div>
+                            <div v-else>
+                                <h4>Error loading domains/urls</h4>
                             </div>
                         </div>
                     </div>

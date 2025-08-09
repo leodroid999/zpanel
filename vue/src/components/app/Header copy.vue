@@ -269,13 +269,13 @@ export default {
 		
 		<!-- BEGIN menu -->
 		<div class="menu">
-			<div class="menu-item">
+			<!-- <div class="menu-item">
 				<a href="#" v-on:click="toggleAppHeaderSearch" data-toggle-class="app-header-menu-search-toggled"
 					data-toggle-target=".app" class="menu-link">
 					<div class="menu-icon"><i class="bi bi-search nav-icon"></i></div>
 				</a>
-			</div>
-			<div class="menu-item dropdown dropdown-mobile-full">
+			</div> -->
+			<!-- <div class="menu-item dropdown dropdown-mobile-full">
 				<a href="#" data-bs-toggle="dropdown" data-bs-display="static" class="menu-link">
 					<div class="menu-icon" @click="openNotifications"><i class="bi bi-card-checklist nav-icon"></i></div>
 					<div class="menu-badge bg-theme" v-if="userStore.notifications && userStore.notifications.length > 0">
@@ -318,7 +318,7 @@ export default {
 						<a href="#" class="text-decoration-none fw-bold">SEE ALL</a>
 					</div>
 				</div>
-			</div>
+			</div> -->
 			<span v-if="userStore.user">{{ balance }}</span>
 			<div class="menu-item dropdown dropdown-mobile-full">
 				<a href="#" data-bs-toggle="dropdown" data-bs-display="static" class="menu-link">
@@ -328,10 +328,10 @@ export default {
 					<div v-if="userStore.user" class="menu-text d-sm-block d-none">{{ userStore.user.username }}</div>
 				</a>
 				<div class="dropdown-menu dropdown-menu-end me-lg-3 fs-11px mt-1">
-					<RouterLink to="/profile" class="dropdown-item d-flex align-items-center">PROFILE <i
-							class="bi bi-person-circle ms-auto text-theme fs-16px my-n1"></i></RouterLink>
-					<RouterLink to="/orders" class="dropdown-item d-flex align-items-center">ORDERS <i
-							class="bi bi-briefcase ms-auto text-theme fs-16px my-n1"></i></RouterLink>
+					<!-- <RouterLink to="/profile" class="dropdown-item d-flex align-items-center">PROFILE <i
+							class="bi bi-person-circle ms-auto text-theme fs-16px my-n1"></i></RouterLink> -->
+					<!-- <RouterLink to="/orders" class="dropdown-item d-flex align-items-center">ORDERS <i
+							class="bi bi-briefcase ms-auto text-theme fs-16px my-n1"></i></RouterLink> -->
 					<RouterLink to="/settings" class="dropdown-item d-flex align-items-center">SETTINGS <i
 							class="bi bi-gear ms-auto text-theme fs-16px my-n1"></i></RouterLink>
 					<div class="dropdown-divider"></div>
